@@ -1,0 +1,266 @@
+[
+  {
+    "mode": "multiplied",
+    "condition": {
+      "HasImpost": true
+    },
+    "operation": "dop_impost_napil",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.025,
+    "minutes_per_unit": 1.5
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "HasImpost": true
+    },
+    "operation": "dop_impost_frezer",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "HasImpost": true
+    },
+    "operation": "dop_impost_sverl",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "HasImpost": true
+    },
+    "operation": "dop_impost_yst",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {
+      "HasImpost": true
+    },
+    "operation": "yst_zapoln",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.15,
+    "minutes_per_unit": 9
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {
+      "HasImpost": true
+    },
+    "operation": "yst_porog_ypl_derj_shetk_shtift",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "StandZamok": {
+        "min": 1
+      }
+    },
+    "operation": "yst_dver_zamok_nakl_cilindr",
+    "unitField": "StandZamok",
+    "value_per_unit": 0.083,
+    "minutes_per_unit": 5
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "MnogozapZamok": {
+        "min": 1
+      }
+    },
+    "operation": "yst_dver_zamok_nakl_cilindr",
+    "unitField": "MnogozapZamok",
+    "value_per_unit": 0.2,
+    "minutes_per_unit": 12
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {
+      "StublinaCount": {
+        "min": 1
+      }
+    },
+    "operation": "yst_dver_zamok_nakl_cilindr",
+    "unitField": "StublinaCount",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "MnogozapZamok": {
+        "min": 1
+      }
+    },
+    "operation": "yst_plast_fsb",
+    "unitField": "MnogozapZamok",
+    "value_per_unit": 0.167,
+    "minutes_per_unit": 10
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "MnogozapZamok": {
+        "min": 1
+      }
+    },
+    "operation": "dop_frez_shtylp_mnogzaporn_zamok",
+    "unitField": "MnogozapZamok",
+    "value_per_unit": 0.142,
+    "minutes_per_unit": 8.5
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "PetliRolik": {
+        "min": 1
+      }
+    },
+    "operation": "frez_petli",
+    "unitField": "PetliRolik",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {
+      "PetliStand": {
+        "min": 1
+      }
+    },
+    "operation": "sbor_petli",
+    "unitField": "PetliStand",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {
+      "PetliRolik": {
+        "min": 1
+      }
+    },
+    "operation": "sbor_petli",
+    "unitField": "PetliRolik",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {
+      "PetliFural": {
+        "min": 1
+      }
+    },
+    "operation": "sbor_petli",
+    "unitField": "PetliFural",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {
+      "PetliRDRH": {
+        "min": 1
+      }
+    },
+    "operation": "sbor_petli",
+    "unitField": "PetliRDRH",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {
+      "Petli3Section": {
+        "min": 1
+      }
+    },
+    "operation": "sbor_petli",
+    "unitField": "Petli3Section",
+    "value_per_unit": 0.042,
+    "minutes_per_unit": 2.5
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "HasPritvorKP40": true
+    },
+    "operation": "podg_derj_shetki_frez",
+    "unitField": "HasPritvorKP40",
+    "value_per_unit": 0.15,
+    "minutes_per_unit": 9
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "HasPritvorKP40": true
+    },
+    "operation": "krepl_brys",
+    "unitField": "HasPritvorKP40",
+    "value_per_unit": 0.4,
+    "minutes_per_unit": 24
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "StvTCount600": {
+        "min": 1
+      }
+    },
+    "operation": "dop_time_napil",
+    "unitField": "StvTCount600",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "StvTCount400": {
+        "min": 1
+      }
+    },
+    "operation": "dop_time_sbor",
+    "unitField": "StvTCount400",
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "Petli3Section": {
+        "min": 1
+      }
+    },
+    "operation": "pereh_pdp",
+    "unitField": "Petli3Section",
+    "value_per_unit": 0.075,
+    "minutes_per_unit": 4.5
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {"PetliForNaveshCount": {"min": 1}},
+    "operation": "navesh_stv_yst_otv_plank_reg_petli",
+    "unitField": "PetliForNaveshCount",
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {"Petli3Section": {"min": 1}},
+    "operation": "navesh_stv_yst_otv_plank_reg_petli",
+    "unitField": "Petli3Section",
+    "value_per_unit": 0.1,
+    "minutes_per_unit": 6
+  }
+]

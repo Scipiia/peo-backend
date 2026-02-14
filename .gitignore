@@ -1,0 +1,4 @@
+.env
+config/*.yaml
+!config/example.yaml
+errors.log

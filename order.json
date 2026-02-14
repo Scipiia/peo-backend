@@ -1,0 +1,142 @@
+[
+  {
+    "name": "podg_obor",
+    "type": "number",
+    "count": 1,
+    "group": "ign",
+    "label": "Подготовка оборудования",
+    "value": 0.083,
+    "minutes": 5,
+    "required": true
+  },
+  {
+    "name": "napil_ram",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Напиловка рам",
+    "value": 0.067,
+    "minutes": 4,
+    "required": true
+  },
+  {
+    "name": "impost_napil",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Напиловка импоста",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "obr_ram_pbx",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Обработка рамы (PBX)",
+    "value": 0.125,
+    "minutes": 7.5,
+    "required": true
+  },
+  {
+    "name": "promej_sb_ram",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Промежуточная сборка рам",
+    "value": 0.1,
+    "minutes": 6,
+    "required": true
+  },
+  {
+    "name": "imp_frezer",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Импост (Фрезеровка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "impost_sverlo",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Импост (Сверловка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "impost_yst",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Импост (Установка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "opres_nastr",
+    "type": "number",
+    "count": 0,
+    "group": "ign",
+    "label": "Опрессовка (настройка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "opres",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Опрессовка",
+    "value": 0.047,
+    "minutes": 2.8,
+    "required": true
+  },
+  {
+    "name": "yst_ypl_ugl_shtift",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Установка уплотнителей, очистка углов, штифтовка",
+    "value": 0.183,
+    "minutes": 11,
+    "required": true
+  },
+  {
+    "name": "zashivka_stv",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Зашивка (ств)",
+    "value": 0.2,
+    "minutes": 12,
+    "required": true
+  },
+  {
+    "name": "dop_time_napil",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Доп время на напиловку",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "dop_time_sbor",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Доп время на сборку",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  }
+]

@@ -1,0 +1,124 @@
+[
+  {
+    "name": "nastr_obr_napil",
+    "type": "number",
+    "count": 1,
+    "group": "ign",
+    "label": "Настройка оборудования для напиловки",
+    "value": 0.05,
+    "minutes": 3,
+    "required": true
+  },
+  {
+    "name": "napil_kontyr",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Напиловка контура",
+    "value": 0.067,
+    "minutes": 4,
+    "required": true
+  },
+  {
+    "name": "napil_krishek",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Напиловка Крышек(соединитель)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "impost_napil",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Напиловка импоста",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "promej_sb",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Промежуточная сборка",
+    "value": 0.1,
+    "minutes": 6,
+    "required": true
+  },
+  {
+    "name": "imp_frezer",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Импост (фрезеровка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "impost_sverlo",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Импост (сверловка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "imp_sbor",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Импост (сборка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "opres_nastr",
+    "type": "number",
+    "count": 1,
+    "group": "ign",
+    "label": "Опресовка (настройка)",
+    "value": 0.075,
+    "minutes": 4.5,
+    "required": true
+  },
+  {
+    "name": "opres",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Опресовка",
+    "value": 0.047,
+    "minutes": 2.8,
+    "required": true
+  },
+  {
+    "name": "yst_ypl_shtift",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Установка уплотнителей, штифтовка",
+    "value": 0.117,
+    "minutes": 7,
+    "required": true
+  },
+  {
+    "name": "zashivka",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Зашивка",
+    "value": 0.15,
+    "minutes": 9,
+    "required": true
+  }
+]
+
+
