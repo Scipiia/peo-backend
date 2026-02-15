@@ -11,7 +11,7 @@ func (s *Storage) GetOrderMaterials(ctx context.Context, orderNum string, pos in
 
 	//orderNum := "Q6-327732"
 
-	stmtOrderID := `SELECT idorders FROM dem_orders WHERE numorders LIKE ? AND class_id = ?`
+	stmtOrderID := `SELECT idorders FROM dem_orders WHERE numorders = ? AND class_id = ?`
 
 	var id int
 
@@ -20,7 +20,7 @@ func (s *Storage) GetOrderMaterials(ctx context.Context, orderNum string, pos in
 		return nil, fmt.Errorf("%s: ошибка выполнения запроса для получения id который нужен для материалов %w", op, err)
 	}
 
-	stmt := `SELECT idorders, articul_mat, name_mat, width, height, count, pole, position FROM dem_klaes_materials 
+	stmt := `SELECT idorders, articul_mat, name_mat, width, height, count, pole, positio FROM dem_klaes_materials 
             	WHERE idorders=? AND position=? AND TRIM(name_mat) IN ('импост', 'стойка-импост', 'профиль импостный',
             	'импост в дверь', 'Накладка на цилиндр Stublina', 'Створка Т-образная', 'Створка-коробка', 'Створка Т - образ.',
             	'Петля роликовая RDRH', 'Многозапорный замок Stublina с управлением от ручки', 'Петля роликовая для КП45',
@@ -41,7 +41,7 @@ func (s *Storage) GetOrderMaterials(ctx context.Context, orderNum string, pos in
 	for rows.Next() {
 		var material storage.KlaesMaterials
 
-		err := rows.Scan(&material.OrderID, &material.ArticulMat, &material.NameMat, &material.Width, &material.Height, &material.Count, &material.Pole, &material.Position)
+		err = rows.Scan(&material.OrderID, &material.ArticulMat, &material.NameMat, &material.Width, &material.Height, &material.Count, &material.Pole, &material.Position)
 		if err != nil {
 			return nil, fmt.Errorf("%s: ошибка сканирования строк материалов %w", op, err)
 		}

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"log"
 	"strings"
 	"vue-golang/internal/constants"
@@ -58,38 +59,89 @@ type Context struct {
 	// Добавишь больше признаков позже: тип профиля, площадь, кол-во камер и т.д.
 }
 
+//func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, Context, error) {
+//	const op = "service.norm_service_rules.CalculateNorm"
+//	// Получаем материалы
+//	materials, err := s.storage.GetOrderMaterials(ctx, orderNum, pos)
+//	if err != nil {
+//		return nil, Context{}, fmt.Errorf("%s: ошибка получения всех материлов в сервисе %w", op, err)
+//	}
+//
+//	//получаем примечание из dem_price
+//	dopInfo, err := s.storage.GetDopInfoFromDemPrice(ctx, orderNum)
+//	if err != nil {
+//		return nil, Context{}, fmt.Errorf("%s: ошибка получения доп инфо из dem_price %w", op, err)
+//	}
+//
+//	// Строим контекст
+//	ctxData, err := BuildContext(materials, dopInfo, typeIzd)
+//	if err != nil {
+//		return nil, Context{}, fmt.Errorf("%s: ошибка построения контекста %w", op, err)
+//	}
+//
+//	//fmt.Println("CTTTTXXXX", ctxData)
+//
+//	// Получаем шаблон (операции + правила)
+//	template, err := s.storage.GetTemplateByCode(ctx, templateCode)
+//	if err != nil {
+//		return nil, Context{}, fmt.Errorf("%s: ошибка получения шаблона по коду в сервисе %w", op, err)
+//	}
+//
+//	// Применяем правила
+//	result := ApplyRules(template.Operations, template.Rules, ctxData, itemCount)
+//
+//	return result, ctxData, nil
+//}
+
+// TODO приколы с горутинами
 func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, Context, error) {
 	const op = "service.norm_service_rules.CalculateNorm"
-	// Получаем материалы
-	materials, err := s.storage.GetOrderMaterials(ctx, orderNum, pos)
+
+	var (
+		materials []*storage.KlaesMaterials
+		template  *storage.Template
+		dopInfo   []*storage.DopInfoDemPrice
+	)
+
+	g, gCtx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		var err error
+		materials, err = s.storage.GetOrderMaterials(gCtx, orderNum, pos)
+		if err != nil {
+			return fmt.Errorf("materials: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		template, err = s.storage.GetTemplateByCode(gCtx, templateCode)
+		if err != nil {
+			return fmt.Errorf("materials: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		dopInfo, err = s.storage.GetDopInfoFromDemPrice(gCtx, orderNum)
+		if err != nil {
+			return fmt.Errorf("materials: %w", err)
+		}
+		return nil
+	})
+
+	err := g.Wait()
 	if err != nil {
-		return nil, Context{}, fmt.Errorf("%s: ошибка получения всех материлов в сервисе %w", op, err)
+		return nil, Context{}, err
 	}
 
-	//получаем примечание из dem_price
-	dopInfo, err := s.storage.GetDopInfoFromDemPrice(ctx, orderNum)
+	buildContext, err := BuildContext(materials, dopInfo, typeIzd)
 	if err != nil {
-		return nil, Context{}, fmt.Errorf("%s: ошибка получения доп инфо из dem_price %w", op, err)
+		return nil, Context{}, err
 	}
 
-	// Строим контекст
-	ctxData, err := BuildContext(materials, dopInfo, typeIzd)
-	if err != nil {
-		return nil, Context{}, fmt.Errorf("%s: ошибка построения контекста %w", op, err)
-	}
+	result := ApplyRules(template.Operations, template.Rules, buildContext, itemCount)
 
-	//fmt.Println("CTTTTXXXX", ctxData)
-
-	// Получаем шаблон (операции + правила)
-	template, err := s.storage.GetTemplateByCode(ctx, templateCode)
-	if err != nil {
-		return nil, Context{}, fmt.Errorf("%s: ошибка получения шаблона по коду в сервисе %w", op, err)
-	}
-
-	// Применяем правила
-	result := ApplyRules(template.Operations, template.Rules, ctxData, itemCount)
-
-	return result, ctxData, nil
+	return result, buildContext, nil
 }
 
 func BuildContextGlyhar(materials []*storage.KlaesMaterials) Context {

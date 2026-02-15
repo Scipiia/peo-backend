@@ -24,6 +24,8 @@ func CalculateNormOperations(log *slog.Logger, calc NormCalculator) http.Handler
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.norm.CalculateNormOperations"
 
+		start := time.Now()
+
 		var req struct {
 			OrderNum     string `json:"order_num"`
 			Position     int    `json:"position"`
@@ -53,5 +55,16 @@ func CalculateNormOperations(log *slog.Logger, calc NormCalculator) http.Handler
 			Operation: norm,
 			Context:   ctxData,
 		})
+
+		elapsed := time.Since(start)
+		log.Info("TIIIME", elapsed)
+
+		// Логируем время выполнения
+		log.Info("norm calculated",
+			slog.String("order_num", req.OrderNum),
+			slog.Int("pos", req.Position),
+			slog.Duration("duration", elapsed),
+			slog.Int("operations_count", len(norm)),
+		)
 	}
 }
