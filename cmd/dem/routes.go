@@ -5,6 +5,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/cors"
 	"log/slog"
+	"net/http"
+	"os"
+	"path/filepath"
 	getadmincoef "vue-golang/http-server/admin/get"
 	saveadmincoef "vue-golang/http-server/admin/save"
 	upadmincoef "vue-golang/http-server/admin/update"
@@ -108,40 +111,40 @@ func routes(cfg config.Config, log *slog.Logger, storage *mysql.Storage, service
 	//
 	router.Mount("/api/admin", adminRouter)
 	//
-	//// TODO Статика, vue
-	//frontendDir := "./frontend-dist"
-	//if _, err := os.Stat(frontendDir); os.IsNotExist(err) {
-	//	log.Error("Папка фронтенда не найдена", "path", frontendDir)
-	//	os.Exit(1) // или panic — лучше упасть при старте
-	//}
-	//
-	////Отдаём статические файлы: assets/, js/, css/, img/, favicon.ico и т.д.
-	//fileServer := http.StripPrefix("/", http.FileServer(http.Dir(frontendDir)))
-	//
-	//// Регистрируем точные префиксы для ассетов
-	//router.Handle("/assets/*", fileServer)
-	//router.Handle("/js/*", fileServer)
-	//router.Handle("/css/*", fileServer)
-	//router.Handle("/img/*", fileServer)
-	////router.Handle("/favicon.ico", fileServer)
-	//
-	//router.With(auth.BasicAuth(cfg.AdminLogin, cfg.AdminPass)).Handle("/admin/*",
-	//	http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	//		http.ServeFile(w, r, filepath.Join("./frontend-dist", "index.html"))
-	//	}),
-	//)
-	//
-	////SPA fallback: любой другой путь → index.html
-	//router.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
-	//	// Проверяем, существует ли файл — если да, отдаем его
-	//	path := filepath.Join(frontendDir, r.URL.Path)
-	//	if info, err := os.Stat(path); err == nil && !info.IsDir() {
-	//		http.ServeFile(w, r, path)
-	//		return
-	//	}
-	//	// Иначе — SPA
-	//	http.ServeFile(w, r, filepath.Join(frontendDir, "index.html"))
-	//})
+	// TODO Статика, vue
+	frontendDir := "./frontend-dist"
+	if _, err := os.Stat(frontendDir); os.IsNotExist(err) {
+		log.Error("Папка фронтенда не найдена", "path", frontendDir)
+		os.Exit(1) // или panic — лучше упасть при старте
+	}
+
+	//Отдаём статические файлы: assets/, js/, css/, img/, favicon.ico и т.д.
+	fileServer := http.StripPrefix("/", http.FileServer(http.Dir(frontendDir)))
+
+	// Регистрируем точные префиксы для ассетов
+	router.Handle("/assets/*", fileServer)
+	router.Handle("/js/*", fileServer)
+	router.Handle("/css/*", fileServer)
+	router.Handle("/img/*", fileServer)
+	//router.Handle("/favicon.ico", fileServer)
+
+	router.With(auth.BasicAuth(cfg.AdminLogin, cfg.AdminPass)).Handle("/admin/*",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, filepath.Join("./frontend-dist", "index.html"))
+		}),
+	)
+
+	//SPA fallback: любой другой путь → index.html
+	router.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
+		// Проверяем, существует ли файл — если да, отдаем его
+		path := filepath.Join(frontendDir, r.URL.Path)
+		if info, err := os.Stat(path); err == nil && !info.IsDir() {
+			http.ServeFile(w, r, path)
+			return
+		}
+		// Иначе — SPA
+		http.ServeFile(w, r, filepath.Join(frontendDir, "index.html"))
+	})
 
 	return router
 }

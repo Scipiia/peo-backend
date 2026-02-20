@@ -20,7 +20,7 @@ func (s *Storage) GetOrderMaterials(ctx context.Context, orderNum string, pos in
 		return nil, fmt.Errorf("%s: ошибка выполнения запроса для получения id который нужен для материалов %w", op, err)
 	}
 
-	stmt := `SELECT idorders, articul_mat, name_mat, width, height, count, pole, positio FROM dem_klaes_materials 
+	stmt := `SELECT idorders, articul_mat, name_mat, width, height, count, pole, position FROM dem_klaes_materials 
             	WHERE idorders=? AND position=? AND TRIM(name_mat) IN ('импост', 'стойка-импост', 'профиль импостный',
             	'импост в дверь', 'Накладка на цилиндр Stublina', 'Створка Т-образная', 'Створка-коробка', 'Створка Т - образ.',
             	'Петля роликовая RDRH', 'Многозапорный замок Stublina с управлением от ручки', 'Петля роликовая для КП45',

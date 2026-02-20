@@ -214,5 +214,21 @@
     "unitField": "StvorkiWith3Petli",
     "value_per_unit": 0.075,
     "minutes_per_unit": 4.5
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {"PetliForNaveshCount": {"min": 1}},
+    "operation": "navesh_stv_yst_otv_plan",
+    "unitField": "PetliForNaveshCount",
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {"Petli3Section": {"min": 1}},
+    "operation": "navesh_stv_yst_otv_plan",
+    "unitField": "Petli3Section",
+    "value_per_unit": 0.1,
+    "minutes_per_unit": 6
   }
 ]

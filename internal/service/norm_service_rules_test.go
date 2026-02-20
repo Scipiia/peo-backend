@@ -2,9 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"sync"
 	"testing"
+	"time"
 	"vue-golang/internal/storage"
 )
 
@@ -14,20 +18,49 @@ type MockNormStorage struct {
 
 func (m *MockNormStorage) GetOrderMaterials(ctx context.Context, orderNum string, pos int) ([]*storage.KlaesMaterials, error) {
 	args := m.Called(ctx, orderNum, pos)
-	return args.Get(0).([]*storage.KlaesMaterials), args.Error(1)
+
+	// Безопасное извлечение: проверяем тип перед приведением
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	materials, ok := args.Get(0).([]*storage.KlaesMaterials)
+	if !ok {
+		// Если тип не совпадает — возвращаем nil + ошибка
+		return nil, fmt.Errorf("expected []*storage.KlaesMaterials, got %T", args.Get(0))
+	}
+
+	return materials, args.Error(1)
 }
 
 func (m *MockNormStorage) GetTemplateByCode(ctx context.Context, code string) (*storage.Template, error) {
 	args := m.Called(ctx, code)
-	return args.Get(0).(*storage.Template), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	template, ok := args.Get(0).(*storage.Template)
+	if !ok {
+		return nil, fmt.Errorf("expected *storage.Template, got %T", args.Get(0))
+	}
+
+	return template, args.Error(1)
 }
 
 func (m *MockNormStorage) GetDopInfoFromDemPrice(ctx context.Context, orderNum string) ([]*storage.DopInfoDemPrice, error) {
 	args := m.Called(ctx, orderNum)
+
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*storage.DopInfoDemPrice), args.Error(1)
+
+	dopInfo, ok := args.Get(0).([]*storage.DopInfoDemPrice)
+	if !ok {
+		return nil, fmt.Errorf("expected []*storage.DopInfoDemPrice, got %T", args.Get(0))
+	}
+
+	return dopInfo, args.Error(1)
 }
 
 func newMaterial(name string, count float64, width float64) *storage.KlaesMaterials {
@@ -125,9 +158,9 @@ func TestCalculateNorm_Multiplied(t *testing.T) {
 		},
 	}
 
-	mockStorage.On("GetOrderMaterials", mock.Anything, "ORD-123", 1).Return(materials, nil)
-	mockStorage.On("GetDopInfoFromDemPrice", mock.Anything, "ORD-123").Return([]*storage.DopInfoDemPrice{}, nil)
-	mockStorage.On("GetTemplateByCode", mock.Anything, "56").Return(template, nil)
+	//mockStorage.On("GetOrderMaterials", mock.Anything, "ORD-123", 1).Return(materials, nil)
+	//mockStorage.On("GetDopInfoFromDemPrice", mock.Anything, "ORD-123").Return([]*storage.DopInfoDemPrice{}, nil)
+	//mockStorage.On("GetTemplateByCode", mock.Anything, "56").Return(template, nil)
 
 	mockStorage.On("GetOrderMaterials", mock.Anything, "ORD-123", 1).Return(materials, nil)
 	mockStorage.On("GetDopInfoFromDemPrice", mock.Anything, "ORD-123").Return([]*storage.DopInfoDemPrice{}, nil)
@@ -150,6 +183,72 @@ func TestCalculateNorm_Multiplied(t *testing.T) {
 	operationSborPtl := operation[1]
 	assert.Equal(t, "сбор петли", operationSborPtl.Name)
 	assert.Equal(t, 12.0, operationSborPtl.Minutes)
+}
+
+func TestCalculateNorm_MaterialsError(t *testing.T) {
+	mockStorage := new(MockNormStorage)
+
+	// ✅ Вариант 1: типизированный nil (рекомендуется)
+	mockStorage.On("GetOrderMaterials", mock.Anything, "ORD-123", 1).
+		Return(([]*storage.KlaesMaterials)(nil), errors.New("база недоступна"))
+
+	// ✅ Вариант 2: можно и просто nil — наш улучшенный мок обработает безопасно
+	// mockStorage.On("GetOrderMaterials", mock.Anything, "ORD-123", 1).
+	//     Return(nil, errors.New("база недоступна"))
+
+	mockStorage.On("GetDopInfoFromDemPrice", mock.Anything, "ORD-123").
+		Return(([]*storage.DopInfoDemPrice)(nil), nil)
+	mockStorage.On("GetTemplateByCode", mock.Anything, "TEST").
+		Return((*storage.Template)(nil), nil)
+
+	service := NewNormService(mockStorage)
+	_, _, err := service.CalculateNorm(context.Background(), "ORD-123", 1, "door", "TEST", 1)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "materials:") // в твоём текущем коде префикс "materials:"
+
+	mockStorage.AssertExpectations(t)
+}
+func TestCalculateNorm_ParallelCalls(t *testing.T) {
+	mockStorage := new(MockNormStorage)
+
+	// Используем каналы для отслеживания порядка вызовов
+	callOrder := []string{}
+	mu := sync.Mutex{}
+
+	mockStorage.On("GetOrderMaterials", mock.Anything, "ORD-123", 1).Run(func(args mock.Arguments) {
+		mu.Lock()
+		callOrder = append(callOrder, "materials")
+		mu.Unlock()
+		time.Sleep(10 * time.Millisecond) // имитируем задержку
+	}).Return([]*storage.KlaesMaterials{newMaterial("рама", 4.0, 600.0)}, nil)
+
+	mockStorage.On("GetTemplateByCode", mock.Anything, "TEST").Run(func(args mock.Arguments) {
+		mu.Lock()
+		callOrder = append(callOrder, "template")
+		mu.Unlock()
+		time.Sleep(15 * time.Millisecond)
+	}).Return(&storage.Template{Code: "TEST", Operations: []storage.Operation{}}, nil)
+
+	mockStorage.On("GetDopInfoFromDemPrice", mock.Anything, "ORD-123").Run(func(args mock.Arguments) {
+		mu.Lock()
+		callOrder = append(callOrder, "dop_info")
+		mu.Unlock()
+		time.Sleep(5 * time.Millisecond)
+	}).Return([]*storage.DopInfoDemPrice{}, nil)
+
+	service := NewNormService(mockStorage)
+	_, _, err := service.CalculateNorm(context.Background(), "ORD-123", 1, "door", "TEST", 1)
+
+	assert.NoError(t, err)
+
+	// Проверяем, что все три вызова произошли (порядок может быть любым из-за параллелизма)
+	assert.Len(t, callOrder, 3)
+	assert.Contains(t, callOrder, "materials")
+	assert.Contains(t, callOrder, "template")
+	assert.Contains(t, callOrder, "dop_info")
+
+	mockStorage.AssertExpectations(t)
 }
 
 func TestCompareFloatField(t *testing.T) {

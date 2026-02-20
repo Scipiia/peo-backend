@@ -6,8 +6,8 @@
     },
     "operation": "impost_napil",
     "unitField": "HasImpostCount",
-    "value_per_unit": 0.017,
-    "minutes_per_unit": 1
+    "value_per_unit": 0.018,
+    "minutes_per_unit": 1.07
   },
   {
     "mode": "multiplied",
@@ -16,8 +16,8 @@
     },
     "operation": "imp_frezer",
     "unitField": "HasImpostCount",
-    "value_per_unit": 0.033,
-    "minutes_per_unit": 2
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
   },
   {
     "mode": "multiplied",
@@ -26,8 +26,8 @@
     },
     "operation": "impost_sverlo",
     "unitField": "HasImpostCount",
-    "value_per_unit": 0.017,
-    "minutes_per_unit": 1
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
   },
   {
     "mode": "multiplied",
@@ -68,13 +68,13 @@
     "condition": {
       "HasImpost": true
     },
-    "operation": "zashivka_stv",
+    "operation": "zashivka",
     "unitField": "HasImpostCount",
-    "value_per_unit": 0.200,
-    "minutes_per_unit": 12
+    "value_per_unit": 0.333,
+    "minutes_per_unit": 20
   },
   {
-    "mode": "additivePlusMultiplied",
+    "mode": "multiplied",
     "condition": {
       "StvWindowCount": {
         "min": 1
@@ -104,333 +104,9 @@
         "min": 1
       }
     },
-    "operation": "obr_tag_stv",
+    "operation": "sverlo_tag_stv",
     "unitField": "TagCountWin",
-    "value_per_unit": 0.025,
-    "minutes_per_unit": 1.5
-  }
-]
-
-///
-[
-  {
-    "name": "podg_obor",
-    "type": "number",
-    "count": 1,
-    "group": "ign",
-    "label": "Подготовка оборудования",
-    "value": 0.05,
-    "minutes": 3,
-    "required": true
-  },
-  {
-    "name": "napil_ram_stv",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Напиловка створок и рам",
-    "value": 0.067,
-    "minutes": 4,
-    "required": true
-  },
-  {
-    "name": "napil_don_soed",
-    "type": "number",
-    "count": 0,
-    "group": "",
-    "label": "Напиловка Донника и соединителя",
-    "value": 0,
-    "minutes": 0,
-    "required": true
-  },
-  {
-    "name": "napil_shtylp",
-    "type": "number",
-    "count": 0,
-    "group": "",
-    "label": "Напиловка Штульпа",
-    "value": 0,
-    "minutes": 0,
-    "required": true
-  },
-  {
-    "name": "impost_napil",
-    "type": "number",
-    "count": 0,
-    "group": "imp",
-    "label": "Напиловка импоста",
-    "value": 0,
-    "minutes": 0,
-    "required": true
-  },
-  {
-    "name": "nastr_pbx_vo",
-    "type": "number",
-    "count": 1,
-    "group": "ign",
-    "label": "Настройка (PBX) кол-во В/О",
-    "value": 0.067,
-    "minutes": 4,
-    "required": true
-  },
-  {
-    "name": "meh_obr_pzr",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Мех обработка(ПЗР)",
-    "value": 0.033,
-    "minutes": 2,
-    "required": true
-  },
-  {
-    "name": "rab_pbx_vo2",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Работа станка (PBX) количество В/О по 2шт.",
-    "value": 0.033,
-    "minutes": 2,
-    "required": true
-  },
-  {
-    "name": "frez_yst_shtylp",
-    "type": "number",
-    "count": 0,
-    "group": "",
-    "label": "Фрезеровка и установка штульпов.",
-    "value": 0,
-    "minutes": 0,
-    "required": true
-  },
-  {
-    "name": "obr_stv",
-    "type": "number",
-    "count": 1,
-    "group": "obr_stv",
-    "label": "Обработка створки",
-    "value": 0.25,
-    "minutes": 15,
-    "required": true
-  },
-  {
-    "name": "sles_obr_yst_furn",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Слесарная обработка под установку фурнитуры",
-    "value": 0.033,
-    "minutes": 2,
-    "required": true
-  },
-  {
-    "name": "promej_sb_stv",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Промежуточная сборка створок",
-    "value": 0.25,
-    "minutes": 15,
-    "required": true
-  },
-  {
-    "name": "promej_sb_ram",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Промежуточная сборка рам",
-    "value": 0.25,
-    "minutes": 15,
-    "required": true
-  },
-  {
-    "name": "imp_frezer",
-    "type": "number",
-    "count": 0,
-    "group": "imp",
-    "label": "Импост (фрезеровка)",
-    "value": 0,
-    "minutes": 0,
-    "required": true
-  },
-  {
-    "name": "impost_sverlo",
-    "type": "number",
-    "count": 0,
-    "group": "imp",
-    "label": "Импост (Сверловка)",
-    "value": 0,
-    "minutes": 0,
-    "required": true
-  },
-  {
-    "name": "impost_yst",
-    "type": "number",
-    "count": 0,
-    "group": "imp",
-    "label": "Импост (Установка)",
-    "value": 0,
-    "minutes": 0,
-    "required": true
-  },
-  {
-    "name": "opres_nastr",
-    "type": "number",
-    "count": 0,
-    "group": "ign",
-    "label": "Опрессовка (настройка)",
-    "value": 0,
-    "minutes": 0,
-    "required": true
-  },
-  {
-    "name": "opres",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Опрессовка",
-    "value": 0.047,
-    "minutes": 2.8,
-    "required": true
-  },
-  {
-    "name": "yst_ypl",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Установка уплотнителей.",
-    "value": 0.267,
-    "minutes": 16,
-    "required": true
-  },
-  {
-    "name": "napil_tag_stv",
-    "type": "number",
-    "count": 1,
-    "group": "tag",
-    "label": "Напиловка тяг (ств)",
-    "value": 0.008,
-    "minutes": 0.5,
-    "required": true
-  },
-  {
-    "name": "obr_tag_stv",
-    "type": "number",
-    "count": 1,
-    "group": "tag",
-    "label": "Обработка тяг (ств)",
-    "value": 0.025,
-    "minutes": 1.5,
-    "required": true
-  },
-  {
-    "name": "podg_furn",
-    "type": "number",
-    "count": 1,
-    "group": "ign",
-    "label": "Подготовка фурнитуры",
-    "value": 0.05,
-    "minutes": 3,
-    "required": true
-  },
-  {
-    "name": "yst_furn_stv",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Установка фурнитуры (ств)",
-    "value": 0.3,
-    "minutes": 18,
-    "required": true
-  },
-  {
-    "name": "navesh_ram_stv",
-    "type": "number",
-    "count": 1,
-    "group": "obr_stv",
-    "label": "навешивание на раму (ств)",
-    "value": 0.3,
-    "minutes": 18,
-    "required": true
-  },
-  {
-    "name": "yst_ypl_falc",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Установка уплотнителя фальца",
-    "value": 0.167,
-    "minutes": 10,
-    "required": true
-  },
-  {
-    "name": "zashivka_stv",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Зашивка (ств)",
-    "value": 0.2,
-    "minutes": 12,
-    "required": true
-  },
-  {
-    "name": "zamaz_germ_otv_rezc",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Замазка герметиком отв. от резцов",
-    "value": 0.167,
-    "minutes": 10,
-    "required": true
-  },
-  {
-    "name": "yst_paraln_xpc",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Установка паралона XPC",
-    "value": 0.117,
-    "minutes": 7,
-    "required": true
-  },
-  {
-    "name": "yst_frk129",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Установка FRK129",
-    "value": 0.067,
-    "minutes": 4,
-    "required": true
-  },
-  {
-    "name": "yst_frk126",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Установка FRK126",
-    "value": 0.133,
-    "minutes": 8,
-    "required": true
-  },
-  {
-    "name": "dop_time_napil",
-    "type": "number",
-    "count": 0,
-    "group": "",
-    "label": "Доп время на напиловку",
-    "value": 0,
-    "minutes": 0,
-    "required": true
-  },
-  {
-    "name": "dop_time_sbor",
-    "type": "number",
-    "count": 0,
-    "group": "",
-    "label": "Доп время на сборку",
-    "value": 0,
-    "minutes": 0,
-    "required": true
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
   }
 ]

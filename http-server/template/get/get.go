@@ -100,13 +100,13 @@ func GetAllTemplates(log *slog.Logger, template TemplateJSON) http.HandlerFunc {
 
 		//log.With(slog.String("op", op)).Info("Fetching all templates")
 
-		ctx, cancel := context.WithTimeout(r.Context(), 50*time.Millisecond)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		templates, err := template.GetAllTemplates(ctx)
 		if err != nil {
 			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("Failed to fetch templates")
-			http.Error(w, "Internal error", http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 

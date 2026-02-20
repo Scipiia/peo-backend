@@ -116,7 +116,7 @@ func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos in
 		var err error
 		template, err = s.storage.GetTemplateByCode(gCtx, templateCode)
 		if err != nil {
-			return fmt.Errorf("materials: %w", err)
+			return fmt.Errorf("template: %w", err)
 		}
 		return nil
 	})
@@ -124,7 +124,7 @@ func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos in
 		var err error
 		dopInfo, err = s.storage.GetDopInfoFromDemPrice(gCtx, orderNum)
 		if err != nil {
-			return fmt.Errorf("materials: %w", err)
+			return fmt.Errorf("dopInfo: %w", err)
 		}
 		return nil
 	})
@@ -150,10 +150,6 @@ func BuildContextGlyhar(materials []*storage.KlaesMaterials) Context {
 	for _, m := range materials {
 
 		name := strings.TrimSpace(m.NameMat)
-		//if name == "импост" || name == "Профиль импостный" || name == "стойка-импост" || name == "импост в дверь" {
-		//	ctx.HasImpost = true
-		//	ctx.ImpostCount += m.Count
-		//}
 
 		if constants.ImpostCount[name] {
 			ctx.HasImpost = true
@@ -213,97 +209,56 @@ func BuildContextDoor(materials []*storage.KlaesMaterials, dopInfo []*storage.Do
 
 	for _, m := range materials {
 
-		//log.Printf("MATER", m)
 		name := strings.TrimSpace(m.NameMat)
-		//if name == "импост" || name == "профиль импостный" || name == "стойка-импост" || name == "импост в дверь" {
-		//	ctx.HasImpost = true
-		//	ctx.ImpostCount += m.Count
-		//}
 
 		if constants.ImpostCount[name] {
 			ctx.HasImpost = true
 			ctx.ImpostCount += m.Count
 		}
 
-		//if name == "накладка на цилиндр stublina" || name == "накладка на цилиндр stublina (под покраску)" {
-		//	ctx.StublinaCount += m.Count
-		//}
-
 		if constants.StublinaCount[name] {
 			ctx.StublinaCount += m.Count
 		}
-
-		//if (name == "створка т-образная" || name == "створка-коробка" || name == "створка т - образ.") && m.Width < 615 {
-		//	//ctx.HasStvT = true
-		//	ctx.StvTCount600 += m.Count
-		//	//log.Printf("MATERILAs", m.Width)
-		//}
-
 		if constants.StvTCount600[name] && m.Width <= 615 {
 			ctx.StvTCount600 += m.Count
 		}
-
-		//if (name == "створка т-образная" || name == "створка-коробка" || name == "створка т - образ.") && m.Width < 400 {
-		//	//ctx.HasStvT = true
-		//	ctx.StvTCount400 += m.Count
-		//	//log.Printf("MATERILAs", m.Width)
-		//}
-
 		if constants.StvTCount400[name] && m.Width <= 400 {
 			ctx.StvTCount400 += m.Count
 		}
 
 		//TODO Притвор КП40
-		//if name == "притвор кп40" {
-		//	ctx.PritvorKP40 += m.Count
-		//	ctx.HasPritvorKP40 = true
-		//}
-
 		if constants.PritvorKP40[name] {
 			ctx.PritvorKP40 += m.Count
 			ctx.HasPritvorKP40 = true
 		}
 
 		//TODO ПЕТЛИ
-
 		if constants.PetliStand[name] {
 			ctx.PetliStand += m.Count
 			ctx.PetliForNaveshCount += m.Count
 		}
-
 		if constants.PetliRolik[name] {
 			ctx.PetliRolik += m.Count
 			ctx.PetliForNaveshCount += m.Count
 		}
-
 		if constants.Petli3Section[name] {
 			ctx.Petli3Section += m.Count
 		}
-
 		if constants.PetliFural[name] {
 			ctx.PetliFural += m.Count
 			ctx.HasPetliFural = true
 			ctx.PetliForNaveshCount += m.Count
 		}
-
 		if constants.PetliRDRH[name] {
 			ctx.PetliRDRH += m.Count
 			ctx.HasPetliRDRH = true
 		}
 
-		//zamokk := make(map[int]string)
-		//
-		////TODO замок
-		//if name == "многозапорный замок stublina с управлением от ручки" {
-		//	ctx.MnogozapZamok += m.Count
-		//	ctx.StandZamok += m.Count
-		//}
-
+		//TODO замок
 		if constants.MnogozapZamok[name] {
 			ctx.MnogozapZamok += m.Count
 			ctx.StandZamok += m.Count
 		}
-
 		if constants.StandZamok[name] {
 			ctx.StandZamok += m.Count
 		}
@@ -380,7 +335,6 @@ func ApplyRules(operations []storage.Operation, rules []storage.Rule, ctx Contex
 				result[i].Minutes = rule.SetMinutes
 			case "multiplied":
 				count := getCountMaterials(rule.UnitField, ctx, itemCount)
-				//log.Printf("GGGGGGGG", count)
 				result[i].Value = rule.ValuePerUnit * count
 				result[i].Minutes = rule.MinutesPerUnit * count
 				result[i].Count = count
