@@ -2,7 +2,6 @@ package get
 
 import (
 	"context"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
@@ -25,10 +24,10 @@ func GetOrdersFilter(log *slog.Logger, getOrders GetOrders) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.orders.orders.GetOrdersFilter"
 
-		log := log.With(
-			slog.String("op", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		//log := log.With(
+		//	slog.String("op", op),
+		//	slog.String("request_id", middleware.GetReqID(r.Context())),
+		//)
 
 		// Получаем параметры
 		yearStr := r.URL.Query().Get("year")

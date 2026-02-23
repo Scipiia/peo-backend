@@ -50,10 +50,10 @@ func SaveWorkersOperation(log *slog.Logger, result ResultWorkers) http.HandlerFu
 			}
 		}
 
-		log.Info("Received assignments",
-			slog.Int("total", len(req.Assignments)),
-			slog.Any("sample", req.Assignments[0]),
-		)
+		//log.Info("Received assignments",
+		//	slog.Int("total", len(req.Assignments)),
+		//	slog.Any("sample", req.Assignments[0]),
+		//)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -65,9 +65,9 @@ func SaveWorkersOperation(log *slog.Logger, result ResultWorkers) http.HandlerFu
 			return
 		}
 
-		log.Info("Assignments saved successfully",
-			slog.Int("saved_count", len(req.Assignments)),
-		)
+		//log.Info("Assignments saved successfully",
+		//	slog.Int("saved_count", len(req.Assignments)),
+		//)
 
 		render.JSON(w, r, map[string]interface{}{
 			"status":  "success",

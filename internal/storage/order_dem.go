@@ -34,4 +34,5 @@ type ResultOrderDetails struct {
 	Count        int     `json:"count"`
 	Image        *string `json:"image"`
 	Color        *string `json:"color"`
+	Customer     *string `json:"customer"`
 }

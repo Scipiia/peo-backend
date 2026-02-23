@@ -4,17 +4,47 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"vue-golang/internal/storage"
 )
 
-func (s *Storage) GetAllWorkers(ctx context.Context) ([]storage.GetWorkers, error) {
+func (s *Storage) GetAllWorkers(ctx context.Context, typeIzd string) ([]storage.GetWorkers, error) {
 	const op = "storage.mysql.GetWorkers"
 
-	stmt := "SELECT id, name FROM dem_employees_al WHERE is_active = TRUE"
+	productToTeam := map[string]string{
+		"window": "windows",
+		"door":   "windows",
+		"glyhar": "windows",
+
+		"vitrage": "vitrages",
+		"loggia":  "vitrages",
+	}
+
+	baseQuery := `SELECT DISTINCT e.id, e.name FROM dem_employees_al e`
+	var query string
+	var args []interface{}
+
+	if typeIzd != "" {
+		// Проверяем, есть ли тип в мапе
+		if teamSlug, ok := productToTeam[typeIzd]; ok {
+			query = baseQuery + `
+                JOIN dem_employee_teams_al et ON e.id = et.employee_id
+                JOIN dem_teams_al t ON et.team_id = t.id
+                WHERE e.is_active = TRUE AND t.slug = ?
+                ORDER BY e.name ASC`
+			args = append(args, teamSlug)
+
+		} else {
+			query = baseQuery + ` WHERE e.is_active = TRUE ORDER BY e.name ASC`
+
+		}
+	} else {
+		// Пустой тип — тоже возвращаем всех
+		query = baseQuery + ` WHERE e.is_active = TRUE ORDER BY e.name ASC`
+	}
 
 	var workers []storage.GetWorkers
-
-	rows, err := s.db.QueryContext(ctx, stmt)
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: ошибка получения всех работников: %w", op, err)
 	}
@@ -32,6 +62,59 @@ func (s *Storage) GetAllWorkers(ctx context.Context) ([]storage.GetWorkers, erro
 	}
 
 	return workers, nil
+}
+
+// Storage: GetWorkersForReport
+func (s *Storage) GetWorkersForReport(ctx context.Context, productIDs []int64) ([]storage.GetWorkers, error) {
+	const op = "storage.mysql.GetWorkersForReport"
+
+	// Если нет продуктов — возвращаем всех активных (fallback)
+	if len(productIDs) == 0 {
+		return s.GetAllWorkers(ctx, "")
+	}
+
+	// Запрос: сотрудники, которые реально работали в этих продуктах + все активные (UNION)
+	query := `
+        SELECT DISTINCT e.id, e.name 
+        FROM dem_employees_al e
+        WHERE e.is_active = TRUE
+        AND (
+            -- Вариант А: только те, у кого есть факт в выбранных продуктах
+            e.id IN (
+                SELECT DISTINCT employee_id 
+                FROM dem_operation_executors_al 
+                WHERE product_id IN (?)
+            )
+            -- Вариант Б (раскомментировать, если нужно показывать всех для новых назначений):
+            -- OR e.id IN (SELECT id FROM dem_employees_al WHERE is_active = TRUE)
+        )
+        ORDER BY e.name ASC
+    `
+
+	// Для IN (?) с динамическим количеством
+	query = strings.Replace(query, "(?)", "("+placeholders(len(productIDs))+")", 1)
+
+	args := make([]interface{}, len(productIDs))
+	for i, id := range productIDs {
+		args[i] = id
+	}
+
+	var workers []storage.GetWorkers
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var w storage.GetWorkers
+		if err := rows.Scan(&w.ID, &w.Name); err != nil {
+			return nil, fmt.Errorf("%s: scan: %w", op, err)
+		}
+		workers = append(workers, w)
+	}
+
+	return workers, rows.Err()
 }
 
 func (s *Storage) SaveOperationWorkers(ctx context.Context, req storage.SaveWorkers) error {

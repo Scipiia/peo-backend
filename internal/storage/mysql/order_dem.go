@@ -159,7 +159,7 @@ func (s *Storage) GetOrderDetails(ctx context.Context, orderNum string) ([]*stor
 
 	stmt := `SELECT ANY_VALUE(p.id_) AS id, ANY_VALUE(t.text_type) AS text_type, p.x, 
                     ANY_VALUE(r.order_num) AS order_num, SUM(p.sqr) AS sqr, ANY_VALUE(p.note) AS note,
-                    SUM(p.icount) AS icount, ANY_VALUE(p.color) AS color, ANY_VALUE(i.im_image) AS im_image 
+                    SUM(p.icount) AS icount, ANY_VALUE(p.color) AS color, ANY_VALUE(i.im_image) AS im_image, ANY_VALUE(r.customer) AS customer 
              FROM dem_plan p 
              LEFT JOIN dem_ready r ON r.id = p.idorder 
              LEFT JOIN dem_images i ON i.im_ordername = r.order_num AND i.im_orderpos = p.x
@@ -179,7 +179,7 @@ func (s *Storage) GetOrderDetails(ctx context.Context, orderNum string) ([]*stor
 	for rows.Next() {
 		var detail storage.ResultOrderDetails
 
-		err := rows.Scan(&detail.ID, &detail.NamePosition, &detail.Position, &detail.OrderNum, &detail.Sqr, &detail.Note, &detail.Count, &detail.Color, &detail.Image)
+		err := rows.Scan(&detail.ID, &detail.NamePosition, &detail.Position, &detail.OrderNum, &detail.Sqr, &detail.Note, &detail.Count, &detail.Color, &detail.Image, &detail.Customer)
 		if err != nil {
 			return nil, fmt.Errorf("%s: ошибка сканирования строк для получения деталей заказа %w", op, err)
 		}
