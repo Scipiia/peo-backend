@@ -39,11 +39,6 @@ func GetOrderDetails(log *slog.Logger, order OrderDetails) http.HandlerFunc {
 		const op = "handler.get_orders.GetOrderDetails1"
 
 		orderNum := chi.URLParam(r, "orderNum")
-		if orderNum == "" {
-			log.Error("Missing orderNum in query parameters")
-			http.Error(w, "Missing orderNum", http.StatusBadRequest)
-			return
-		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()

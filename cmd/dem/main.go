@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"os"
 	"vue-golang/internal/config"
-	"vue-golang/internal/service"
+	generate_excel "vue-golang/internal/service/generate-excel"
+	"vue-golang/internal/service/recalculate"
 	"vue-golang/internal/storage/mysql"
 )
 
@@ -27,13 +28,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	normService := service.NewNormService(storage)
+	normService := recalculate.NewNormService(storage)
+	generateExcelService := generate_excel.NewGenerateService(storage)
 
 	log.Info("server started", slog.String("address", cfg.Address))
 
 	srv := &http.Server{
 		Addr:         cfg.Address,
-		Handler:      routes(*cfg, log, storage, normService),
+		Handler:      routes(*cfg, log, storage, normService, generateExcelService),
 		ReadTimeout:  cfg.HTTPServer.Timeout,
 		WriteTimeout: cfg.HTTPServer.Timeout,
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,

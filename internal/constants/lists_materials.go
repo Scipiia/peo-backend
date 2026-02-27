@@ -15,10 +15,11 @@ var (
 
 	// TODO импост
 	ImpostCount = map[string]bool{
-		"Стойка-импост":     true,
-		"Импост":            true,
-		"Профиль импостный": true,
-		"Импост в дверь":    true,
+		"Стойка-импост":               true,
+		"Импост":                      true,
+		"Профиль импостный":           true,
+		"Импост в дверь":              true,
+		"Ригель облег. двухпол. КП40": true,
 	}
 
 	ShtylpCount = map[string]bool{

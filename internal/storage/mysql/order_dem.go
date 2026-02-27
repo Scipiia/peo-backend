@@ -164,7 +164,7 @@ func (s *Storage) GetOrderDetails(ctx context.Context, orderNum string) ([]*stor
              LEFT JOIN dem_ready r ON r.id = p.idorder 
              LEFT JOIN dem_images i ON i.im_ordername = r.order_num AND i.im_orderpos = p.x
              LEFT JOIN dem_types t ON p.type = t.id_
-             WHERE r.order_num LIKE ? AND p.type NOT IN (17, 18) 
+             WHERE r.order_num = ? AND p.type NOT IN (17, 18) 
              GROUP BY p.x, p.type`
 
 	rows, err := s.db.QueryContext(ctx, stmt, orderNum)

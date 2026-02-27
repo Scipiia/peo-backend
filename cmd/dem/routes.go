@@ -11,6 +11,7 @@ import (
 	getadmincoef "vue-golang/http-server/admin/get"
 	saveadmincoef "vue-golang/http-server/admin/save"
 	upadmincoef "vue-golang/http-server/admin/update"
+	generate_excel "vue-golang/http-server/generate-report/generate-excel"
 	getmaterials "vue-golang/http-server/materials/get"
 	getorder "vue-golang/http-server/order-dem/get"
 	"vue-golang/http-server/order-norm/get"
@@ -24,11 +25,17 @@ import (
 	saveWorkers "vue-golang/http-server/workers/save"
 	"vue-golang/internal/config"
 	"vue-golang/internal/middleware/auth"
-	"vue-golang/internal/service"
+	generate_excel2 "vue-golang/internal/service/generate-excel"
+	"vue-golang/internal/service/recalculate"
 	"vue-golang/internal/storage/mysql"
 )
 
-func routes(cfg config.Config, log *slog.Logger, storage *mysql.Storage, service *service.NormService) *chi.Mux {
+//type Service interface {
+//	recalculate.NormService
+//	generate_excel.GenerateExcel
+//}
+
+func routes(cfg config.Config, log *slog.Logger, storage *mysql.Storage, service *recalculate.NormService, genSevice *generate_excel2.GenerateExcelService) *chi.Mux {
 	router := chi.NewRouter()
 
 	//adminUser := "admin"
@@ -48,7 +55,7 @@ func routes(cfg config.Config, log *slog.Logger, storage *mysql.Storage, service
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
-	router.Use(middleware.URLFormat)
+	//router.Use(middleware.URLFormat)
 
 	//TODO массив со всеми заказами из дема
 	router.Get("/api/orders", getorder.GetOrdersFilter(log, storage))
@@ -93,6 +100,9 @@ func routes(cfg config.Config, log *slog.Logger, storage *mysql.Storage, service
 	//Материалы к заказу
 	router.Get("/api/materials", getmaterials.GetMaterials(log, storage))
 	router.Post("/api/materials/calculation", recalculate_norm.CalculateNormOperations(log, service))
+
+	// TODO генерация excel
+	router.Get("/api/report/excel", generate_excel.GenerateReportExcel(log, genSevice))
 
 	//TODO adminPanel
 

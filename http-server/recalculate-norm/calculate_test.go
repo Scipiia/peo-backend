@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"vue-golang/internal/service"
+	"vue-golang/internal/service/recalculate"
 	"vue-golang/internal/storage"
 )
 
@@ -18,7 +18,7 @@ type MockNormCalculation struct {
 	mock.Mock
 }
 
-func (m *MockNormCalculation) CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, service.Context, error) {
+func (m *MockNormCalculation) CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, recalculate.Context, error) {
 	args := m.Called(ctx, orderNum, pos, typeIzd, templateCode, itemCount)
 
 	ops := []storage.Operation{}
@@ -26,9 +26,9 @@ func (m *MockNormCalculation) CalculateNorm(ctx context.Context, orderNum string
 		ops = args.Get(0).([]storage.Operation)
 	}
 
-	ctxData := service.Context{}
+	ctxData := recalculate.Context{}
 	if args.Get(1) != nil {
-		ctxData = args.Get(1).(service.Context)
+		ctxData = args.Get(1).(recalculate.Context)
 	}
 
 	return ops, ctxData, args.Error(2)
@@ -43,7 +43,7 @@ func TestCalculateNormOperations_Success(t *testing.T) {
 		{Name: "сборка", Minutes: 60.0, Value: 15.0, Count: 2.0},
 		{Name: "адаптер ПДП 1001-00", Minutes: 9.0, Value: 0.0, Count: 4.0},
 	}
-	ctxData := service.Context{
+	ctxData := recalculate.Context{
 		Type:         "door",
 		HasPetliRDRH: true,
 		PetliRDRH:    3.0,
@@ -134,7 +134,7 @@ func TestCalculateNormOperations_ServiceError(t *testing.T) {
 	// Настраиваем мок на возврат ошибки
 	mockCalc.On("CalculateNorm",
 		mock.Anything, "ORD-123", 1, "door", "TEST", 1,
-	).Return([]storage.Operation{}, service.Context{}, assert.AnError)
+	).Return([]storage.Operation{}, recalculate.Context{}, assert.AnError)
 
 	logger := slog.Default()
 	handler := CalculateNormOperations(logger, mockCalc)
@@ -146,7 +146,7 @@ func TestCalculateNormOperations_ServiceError(t *testing.T) {
 		"template": "TEST",
 		"count": 1
 	}`
-	req := httptest.NewRequest(http.MethodPost, "/api/norms/calculate", strings.NewReader(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/api/norms/recalculate", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	rr := httptest.NewRecorder()
@@ -168,7 +168,7 @@ func TestCalculateNormOperations_ContextCanceled(t *testing.T) {
 			ctx := args.Get(0).(context.Context)
 			<-ctx.Done() // ждём отмены контекста
 		}).
-		Return([]storage.Operation{}, service.Context{}, context.Canceled)
+		Return([]storage.Operation{}, recalculate.Context{}, context.Canceled)
 
 	logger := slog.Default()
 	handler := CalculateNormOperations(logger, mockCalc)
@@ -179,7 +179,7 @@ func TestCalculateNormOperations_ContextCanceled(t *testing.T) {
 	cancel() // немедленно отменяем
 
 	reqBody := `{"order_num": "ORD-123", "position": 1, "type": "door", "template": "TEST", "count": 1}`
-	req := httptest.NewRequest(http.MethodPost, "/api/norms/calculate", strings.NewReader(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/api/norms/recalculate", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx) // передаём отменённый контекст
 

@@ -670,6 +670,7 @@ func buildProductFilters(f ProductFilter) (string, []interface{}) {
 	if len(conditions) > 0 {
 		where = "WHERE " + strings.Join(conditions, " AND ")
 	}
+
 	return where, args
 }
 

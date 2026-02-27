@@ -54,7 +54,7 @@ func SaveTemplateAdmin(log *slog.Logger, temp TemplateCreateProvider) http.Handl
 			return
 		}
 
-		log.Info("FFFFF", rulesJSON)
+		//log.Info("FFFFF", rulesJSON)
 
 		err = temp.CreateTemplateAdmin(r.Context(), storage.TemplateAdmin{
 			Code:      req.Code,

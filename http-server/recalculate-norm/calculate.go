@@ -7,17 +7,17 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
-	"vue-golang/internal/service"
+	"vue-golang/internal/service/recalculate"
 	"vue-golang/internal/storage"
 )
 
 type NormCalculator interface {
-	CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, service.Context, error)
+	CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, recalculate.Context, error)
 }
 
 type Resp struct {
 	Operation []storage.Operation `json:"operation"`
-	Context   service.Context     `json:"context"`
+	Context   recalculate.Context `json:"context"`
 }
 
 func CalculateNormOperations(log *slog.Logger, calc NormCalculator) http.HandlerFunc {
@@ -42,7 +42,7 @@ func CalculateNormOperations(log *slog.Logger, calc NormCalculator) http.Handler
 
 		norm, ctxData, err := calc.CalculateNorm(ctx, req.OrderNum, req.Position, req.TypeIzd, req.TemplateCode, req.ItemCount)
 		if err != nil {
-			log.Error("Failed to calculate norm", slog.String("error", err.Error()))
+			log.Error("Failed to recalculate norm", slog.String("error", err.Error()))
 			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}
