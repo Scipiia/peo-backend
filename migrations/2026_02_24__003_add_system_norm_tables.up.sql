@@ -1,0 +1,1 @@
+ALTER TABLE dem_product_instances_al ADD COLUMN sqr_stv DOUBLE NULL DEFAULT NULL;

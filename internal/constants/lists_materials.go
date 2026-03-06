@@ -3,7 +3,8 @@ package constants
 var (
 	// TODO замки
 	MnogozapZamok = map[string]bool{
-		"Многозапорный замок Stublina с управлением от ручки": true,
+		"Многозапорный замок Stublina с управлением от ручки":   true,
+		"Многозапорный замок KFV AS4350 с управлением от ручки": true,
 	}
 
 	StandZamok = map[string]bool{

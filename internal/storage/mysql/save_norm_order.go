@@ -13,8 +13,12 @@ func (s *Storage) SaveNormOrder(ctx context.Context, result storage.OrderNormDet
 	stmt := `INSERT INTO dem_product_instances_al (order_num, template_code, name, count, total_time, type, part_type, 
             parent_assembly, parent_product_id, customer, position, status, systema, type_izd, profile, sqr) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)`
 
+	strCustm := result.Customer
+	strCustmRune := []rune(strCustm)
+	trimStrCustm := string(strCustmRune[0:30])
+
 	exec, err := s.db.ExecContext(ctx, stmt, result.OrderNum, result.TemplateCode, result.Name, result.Count, result.TotalTime,
-		result.Type, result.PartType, result.ParentAssembly, result.ParentProductID, result.Customer, result.Position,
+		result.Type, result.PartType, result.ParentAssembly, result.ParentProductID, trimStrCustm, result.Position,
 		result.Status, result.Systema, result.TypeIzd, result.Profile, result.Sqr)
 	if err != nil {
 		if mysqlErr, ok := err.(*mysql.MySQLError); ok && mysqlErr.Number == 1452 {

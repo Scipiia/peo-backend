@@ -21,17 +21,13 @@ func NewGenerateService(storage GenerateExcelStorage) *GenerateExcelService {
 }
 
 func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.ProductFilter) ([]byte, error) {
-	// 1. Получаем данные через твой интерфейс/сторедж
+
 	products, employees, err := g.storage.GetPEOProductsByCategory(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("fetch data: %w", err)
 	}
 
 	reportType := getReportType(filter.Type)
-
-	for i, pr := range products {
-		fmt.Printf("index:%v --- product:%v", i, pr)
-	}
 
 	f := excelize.NewFile()
 	defer f.Close()
@@ -49,11 +45,9 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	// 2. ФОРМИРУЕМ ШАПКУ
 	var baseHeaders []string
 	if reportType == "window" {
-		// Окна: важнее Профиль и Система
 		baseHeaders = []string{"Спецификация", "№ Заказа", "Корп/дил", "Заказчик", "Вид продукции", "Система", "Наименование", "Профиль", "Кол-во", "Площадь", "Н/час",
 			"Изготовитель", "Н/руб", "защ. Пленки", "пленка н/р"}
 	} else if reportType == "loggia" {
-		// Лоджии: важнее Квадратура и Количество
 		baseHeaders = []string{"Витраж", "№ Заказа", "Корп/дил", "Заказчик", "Наименование", "Кол-во", "Площадь", "Площадь створки", "Н/час", "Изготовитель", "Н/час", "Н/руб", "Разница"}
 	} //else {
 	//baseHeaders = []string{"ID", "Заказ", "Клиент", "Тип", "Дата", "Сумма"}
@@ -146,6 +140,75 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (g *GenerateExcelService) generateSummaryStats(f *excelize.File, sheetName string, products storage.PEOProduct) error {
+
+	//headerStyle, _ := f.NewStyle(&excelize.Style{
+	//	Border: []excelize.Border{{Type: "bottom", Color: "4A5568", Style: 2}},
+	//	Fill: excelize.Fill{
+	//		Type:         "pattern",
+	//		Pattern:      1,
+	//		Color:        []string{"EDF2F7"},
+	//		Shading:      0,
+	//		Transparency: 0,
+	//	},
+	//	Font:      &excelize.Font{Bold: true},
+	//	Alignment: &excelize.Alignment{Horizontal: "center"},
+	//})
+
+	headers := []string{"Наименование", "Профиль", "Кол-во", "Площадь", "н/час", "н/руб"}
+
+	for i, head := range headers {
+		name, _ := excelize.CoordinatesToCellName(i+1, 100)
+		f.SetCellValue(sheetName, name, head)
+	}
+	//f.SetCellStyle(sheetName, "A1", "F1", headerStyle)
+
+	return nil
+}
+
+// Структуры для группировки
+type GroupStats struct {
+	Count float64
+	Sqr   float64
+	Hours float64
+	Money float64
+}
+
+type GroupKey struct {
+	TypeIzd string
+	Profile string
+}
+
+func (g *GenerateExcelService) getWindowGroup(products []storage.PEOProduct) []GroupStats {
+	var coldWindow, hotWindow, vitrageDoor []storage.PEOProduct
+
+	//normalize := func(s string) string {
+	//	return strings.ToLower(strings.TrimSpace(s))
+	//}
+
+	for _, p := range products {
+		typeIzd := p.TypeIzd
+		systemaIzd := p.Systema
+
+		if p.Type == "window" || p.Type == "glyhar" {
+			if typeIzd == "витраж к двери" {
+				vitrageDoor = append(vitrageDoor, p)
+			} else if systemaIzd == "х" {
+				coldWindow = append(coldWindow, p)
+			} else if systemaIzd == "т" {
+				hotWindow = append(hotWindow, p)
+			}
+		}
+
+		//TODO Двери сделать
+		//if p.Type == "door" {
+		//
+		//}
+	}
+
+	return nil
 }
 
 func cellName(col, row int) string {

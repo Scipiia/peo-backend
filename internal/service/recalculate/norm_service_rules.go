@@ -28,8 +28,9 @@ func NewNormService(storage NormStorage) *NormService {
 type Context struct {
 	Type string
 
-	HasImpost   bool
-	ImpostCount float64
+	HasImpost    bool
+	ImpostCount  float64
+	CounterCount float64
 
 	StublinaCount float64
 
@@ -134,7 +135,7 @@ func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos in
 		return nil, Context{}, err
 	}
 
-	buildContext, err := BuildContext(materials, dopInfo, typeIzd)
+	buildContext, err := BuildContext(materials, dopInfo, typeIzd, itemCount)
 	if err != nil {
 		return nil, Context{}, err
 	}
@@ -144,7 +145,7 @@ func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos in
 	return result, buildContext, nil
 }
 
-func BuildContextGlyhar(materials []*storage.KlaesMaterials) Context {
+func BuildContextGlyhar(materials []*storage.KlaesMaterials, itemCount int) Context {
 	ctx := Context{Type: "glyhar"}
 
 	for _, m := range materials {
@@ -154,6 +155,7 @@ func BuildContextGlyhar(materials []*storage.KlaesMaterials) Context {
 		if constants.ImpostCount[name] {
 			ctx.HasImpost = true
 			ctx.ImpostCount += m.Count
+			//ctx.CounterCount++
 		}
 
 		if constants.StvTCount600[name] && m.Width <= 615 {
@@ -165,7 +167,9 @@ func BuildContextGlyhar(materials []*storage.KlaesMaterials) Context {
 		}
 	}
 
-	//log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f", ctx.HasImpost, ctx.ImpostCount)
+	//ctx.CounterCount = ctx.ImpostCount * float64(itemCount)
+
+	log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f, StvCount=%f, КолКонтуров=%f", ctx.HasImpost, ctx.ImpostCount, ctx.StvWindowCount, ctx.CounterCount)
 
 	return ctx
 }
@@ -288,10 +292,10 @@ func BuildContextDoor(materials []*storage.KlaesMaterials, dopInfo []*storage.Do
 	return ctx
 }
 
-func BuildContext(materials []*storage.KlaesMaterials, dopInfo []*storage.DopInfoDemPrice, typeIzd string) (Context, error) {
+func BuildContext(materials []*storage.KlaesMaterials, dopInfo []*storage.DopInfoDemPrice, typeIzd string, itemCount int) (Context, error) {
 	switch typeIzd {
 	case "glyhar":
-		return BuildContextGlyhar(materials), nil
+		return BuildContextGlyhar(materials, itemCount), nil
 	case "window":
 		return BuildContextWindow(materials), nil
 	case "door":
@@ -305,10 +309,10 @@ func ApplyRules(operations []storage.Operation, rules []storage.Rule, ctx Contex
 	result := make([]storage.Operation, len(operations))
 	copy(result, operations)
 
-	//log.Printf("Загружено правил: %d", len(rules))
-	//for i, r := range rules {
-	//	log.Printf("Правило %d: op=%s, cond=%v", i, r.Operation, r.Condition)
-	//}
+	log.Printf("Загружено правил: %d", len(rules))
+	for i, r := range rules {
+		log.Printf("Правило %d: op=%s, cond=%v", i, r.Operation, r.Condition)
+	}
 	//itemCount := 2
 
 	for i := range result {
@@ -397,6 +401,8 @@ func getCountMaterials(field string, ctx Context, itemCount int) float64 {
 		return ctx.TagCountWin
 	case "PetliForNaveshCount":
 		return ctx.PetliForNaveshCount
+	case "CounterCount":
+		return ctx.CounterCount
 	case "ItemCountForRDRH":
 		if ctx.HasPetliRDRH {
 			return float64(itemCount)
