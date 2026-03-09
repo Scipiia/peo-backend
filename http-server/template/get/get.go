@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	"vue-golang/internal/storage"
@@ -18,7 +19,7 @@ type TemplateJSON interface {
 	GetTemplateByCode(ctx context.Context, code string) (*storage.Template, error)
 	GetAllTemplates(ctx context.Context) ([]*storage.Template, error)
 
-	GetTemplateByCodeAdmin(ctx context.Context, code string) (*storage.Template, error)
+	GetTemplateByCodeAdmin(ctx context.Context, id int64) (*storage.Template, error)
 	GetAllTemplatesAdmin(ctx context.Context) ([]*storage.Template, error)
 }
 
@@ -128,10 +129,11 @@ func GetTemplatesByCodeAdmin(log *slog.Logger, template TemplateJSON) http.Handl
 		//	slog.String("request_id", middleware.GetReqID(r.Context())),
 		//).Info("Fetching template by code")
 
-		code := r.URL.Query().Get("code")
-		if code == "" {
-			log.With(slog.String("op", op)).Error("Missing 'code' in query parameters")
-			http.Error(w, "Missing required query parameter 'code'", http.StatusBadRequest)
+		idStr := r.URL.Query().Get("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			log.With(slog.String("op", op)).Error("Missing 'id' in query parameters")
+			http.Error(w, "Missing required query parameter 'id'", http.StatusBadRequest)
 			return
 		}
 
@@ -139,17 +141,17 @@ func GetTemplatesByCodeAdmin(log *slog.Logger, template TemplateJSON) http.Handl
 		defer cancel()
 
 		// Получаем шаблон из хранилища
-		template, err := template.GetTemplateByCodeAdmin(ctx, code)
+		template, err := template.GetTemplateByCodeAdmin(ctx, id)
 		if err != nil {
 			if strings.Contains(err.Error(), "не найден") || errors.Is(err, sql.ErrNoRows) {
-				log.With(slog.String("op", op), slog.String("code", code)).Warn("Form not found")
+				log.With(slog.String("op", op), slog.Int64("id", id)).Warn("Form not found")
 				http.Error(w, "Form not found", http.StatusNotFound)
 				return
 			}
 
 			log.With(
 				slog.String("op", op),
-				slog.String("code", code),
+				slog.Int64("id", id),
 				slog.String("error", err.Error()),
 			).Error("Failed to fetch template")
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -174,7 +176,7 @@ func GetAllTemplatesAdmin(log *slog.Logger, template TemplateJSON) http.HandlerF
 
 		//log.With(slog.String("op", op)).Info("Fetching all templates")
 
-		ctx, cancel := context.WithTimeout(r.Context(), 50*time.Millisecond)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		templates, err := template.GetAllTemplatesAdmin(ctx)

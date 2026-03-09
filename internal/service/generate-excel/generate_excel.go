@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/xuri/excelize/v2"
+	"math"
+	"strings"
 	"vue-golang/internal/storage"
 	"vue-golang/internal/storage/mysql"
 )
@@ -88,10 +90,10 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			f.SetCellValue(sheet, cellName(7, rowNum), p.TypeIzd)           // Наименование
 			f.SetCellValue(sheet, cellName(8, rowNum), p.Profile)           // Профиль
 			f.SetCellValue(sheet, cellName(9, rowNum), p.Count)             // Кол-во
-			f.SetCellValue(sheet, cellName(10, rowNum), p.Sqr)              // Площадь
-			f.SetCellValue(sheet, cellName(11, rowNum), p.TotalTime)        // Н/час
-			f.SetCellValue(sheet, cellName(12, rowNum), p.Brigade)          // Н/час
-			f.SetCellValue(sheet, cellName(13, rowNum), p.NormMoney)        // Н/час
+			f.SetCellValue(sheet, cellName(10, rowNum), round(p.Sqr))       // Площадь
+			f.SetCellValue(sheet, cellName(11, rowNum), round(p.TotalTime)) // Н/час
+			f.SetCellValue(sheet, cellName(12, rowNum), p.Brigade)
+			f.SetCellValue(sheet, cellName(13, rowNum), round(p.NormMoney))
 		} else if reportType == "loggia" {
 			// Заполняем 13 колонок для Лоджий
 			//"Витраж", "№ Заказа", "Корп/дил", "Заказчик", "Наименование", "Кол-во", "Площадь", "Площадь ", "Н/час", "Изготовитель", "Н/час", "Н/руб", "Разница"}
@@ -101,11 +103,11 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			f.SetCellValue(sheet, cellName(4, rowNum), p.Customer)       // Заказчик
 			f.SetCellValue(sheet, cellName(5, rowNum), p.TypeIzd)        // Наименование
 			f.SetCellValue(sheet, cellName(6, rowNum), p.Count)          // Кол-во
-			f.SetCellValue(sheet, cellName(7, rowNum), p.Sqr)            // Площадь
-			f.SetCellValue(sheet, cellName(8, rowNum), "-")              // Площадь
-			f.SetCellValue(sheet, cellName(9, rowNum), p.TotalTime)
+			f.SetCellValue(sheet, cellName(7, rowNum), round(p.Sqr))     // Площадь
+			f.SetCellValue(sheet, cellName(8, rowNum), "-")              // Площадь створки для лоджии(пока пусто)
+			f.SetCellValue(sheet, cellName(9, rowNum), round(p.TotalTime))
 			f.SetCellValue(sheet, cellName(10, rowNum), p.Brigade)
-			f.SetCellValue(sheet, cellName(11, rowNum), p.NormMoney)
+			f.SetCellValue(sheet, cellName(11, rowNum), round(p.NormMoney))
 		}
 
 		// 4. Сотрудники (всегда СРАБОТАЕТ ПРАВИЛЬНО благодаря empColMap)
@@ -119,7 +121,6 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 
 	// --- ФИНАЛЬНЫЕ ШТРИХИ ---
 	// 4. Закрепляем первую строку
-	//f.SetPanes(sheet, `{"freeze":true,"split":false,"x_split":0,"y_split":1,"top_left_cell":"A2"}`)
 	f.SetPanes(sheet, &excelize.Panes{
 		Freeze:      true,
 		Split:       false,
@@ -133,6 +134,58 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	// 5. Авто-ширина колонок (базовая реализация)
 	f.SetColWidth(sheet, "A", "G", 15)
 
+	winStats := g.getWindowStats(products)
+	doorStats := g.getDoorStats(products)
+
+	var allStats []StatsRow
+
+	if reportType == "window" {
+		allStats = append(allStats, winStats...)
+		allStats = append(allStats, doorStats...)
+	} else if reportType == "loggia" {
+		//allStats = append(allStats, loggiaStats...)
+	}
+
+	startRowStats := len(products) + 10
+	f.SetCellValue(sheet, cellName(1, startRowStats), "Сводная статистика")
+
+	// 1. Создаем стиль для шапки статистики (серый фон, жирный)
+	statsHeaderStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"CCCCCC"}, Pattern: 1},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+		},
+	})
+
+	// 2. Пишем шапку таблицы статистики
+	statsHeaders := []string{"Наименование", "Кол-во (шт)", "Площадь (м2)", "Н/час всего", "Н/руб (сумма)"}
+	for i, name := range statsHeaders {
+		cell := cellName(i+1, startRowStats+1)
+		f.SetCellValue(sheet, cell, name)
+		f.SetCellStyle(sheet, cell, cell, statsHeaderStyle)
+	}
+
+	// 3. Выводим данные из winStats
+	for i, row := range allStats {
+		currentRow := startRowStats + 2 + i
+
+		f.SetCellValue(sheet, cellName(1, currentRow), row.Label)
+		f.SetCellValue(sheet, cellName(2, currentRow), row.Count)
+		f.SetCellValue(sheet, cellName(3, currentRow), round(row.Sqr))
+		f.SetCellValue(sheet, cellName(4, currentRow), round(row.Hours))
+		f.SetCellValue(sheet, cellName(5, currentRow), round(row.Money))
+
+		// Если это последняя строка (ИТОГО), можно сделать её жирной
+		if row.Label == "Всего окон" {
+			boldStyle, _ := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true}})
+			f.SetCellStyle(sheet, cellName(1, currentRow), cellName(5, currentRow), boldStyle)
+		}
+	}
+
 	// Генерируем буфер
 	buf, err := f.WriteToBuffer()
 	if err != nil {
@@ -140,75 +193,6 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	}
 
 	return buf.Bytes(), nil
-}
-
-func (g *GenerateExcelService) generateSummaryStats(f *excelize.File, sheetName string, products storage.PEOProduct) error {
-
-	//headerStyle, _ := f.NewStyle(&excelize.Style{
-	//	Border: []excelize.Border{{Type: "bottom", Color: "4A5568", Style: 2}},
-	//	Fill: excelize.Fill{
-	//		Type:         "pattern",
-	//		Pattern:      1,
-	//		Color:        []string{"EDF2F7"},
-	//		Shading:      0,
-	//		Transparency: 0,
-	//	},
-	//	Font:      &excelize.Font{Bold: true},
-	//	Alignment: &excelize.Alignment{Horizontal: "center"},
-	//})
-
-	headers := []string{"Наименование", "Профиль", "Кол-во", "Площадь", "н/час", "н/руб"}
-
-	for i, head := range headers {
-		name, _ := excelize.CoordinatesToCellName(i+1, 100)
-		f.SetCellValue(sheetName, name, head)
-	}
-	//f.SetCellStyle(sheetName, "A1", "F1", headerStyle)
-
-	return nil
-}
-
-// Структуры для группировки
-type GroupStats struct {
-	Count float64
-	Sqr   float64
-	Hours float64
-	Money float64
-}
-
-type GroupKey struct {
-	TypeIzd string
-	Profile string
-}
-
-func (g *GenerateExcelService) getWindowGroup(products []storage.PEOProduct) []GroupStats {
-	var coldWindow, hotWindow, vitrageDoor []storage.PEOProduct
-
-	//normalize := func(s string) string {
-	//	return strings.ToLower(strings.TrimSpace(s))
-	//}
-
-	for _, p := range products {
-		typeIzd := p.TypeIzd
-		systemaIzd := p.Systema
-
-		if p.Type == "window" || p.Type == "glyhar" {
-			if typeIzd == "витраж к двери" {
-				vitrageDoor = append(vitrageDoor, p)
-			} else if systemaIzd == "х" {
-				coldWindow = append(coldWindow, p)
-			} else if systemaIzd == "т" {
-				hotWindow = append(hotWindow, p)
-			}
-		}
-
-		//TODO Двери сделать
-		//if p.Type == "door" {
-		//
-		//}
-	}
-
-	return nil
 }
 
 func cellName(col, row int) string {
@@ -239,4 +223,118 @@ func convertType(nameType string) string {
 	default:
 		return ""
 	}
+}
+
+func round(num float64) float64 {
+	return math.Round(num*1000) / 1000
+}
+
+//TODO суммарная статистика по заказам
+
+type StatsRow struct {
+	Label string  // Название (например, "Холодные окна")
+	Count int     // Кол-во
+	Sqr   float64 // Площадь
+	Hours float64 // Н/час
+	Money float64 // Сумма (Н/руб)
+}
+
+func (g *GenerateExcelService) getWindowStats(products []storage.PEOProduct) []StatsRow {
+	var coldWindow, hotWindow, vitrageDoor, unknown, totalWindow StatsRow
+
+	coldWindow.Label = "Холодные окна"
+	hotWindow.Label = "Теплые окна"
+	vitrageDoor.Label = "Витраж к двери"
+	totalWindow.Label = "Всего окон"
+
+	unknown.Label = "Неизвестное изделие(окна)"
+
+	for _, p := range products {
+		systema := strings.ToLower(p.Systema)
+		typeIzd := strings.ToLower(p.TypeIzd)
+		//fmt.Printf("DEBUG: Type='%s', TypeIzd='%s', Systema='%s'\n", p.Type, p.TypeIzd, p.Systema)
+
+		if p.Type == "window" || p.Type == "glyhar" {
+			if typeIzd == "витраж к двери" {
+				addStats(&vitrageDoor, p)
+			} else if systema == "х" {
+				addStats(&coldWindow, p)
+			} else if systema == "т" {
+				addStats(&hotWindow, p)
+			} else {
+				addStats(&unknown, p)
+			}
+		}
+
+	}
+
+	totalWindow.Count = coldWindow.Count + hotWindow.Count + vitrageDoor.Count
+	totalWindow.Sqr = coldWindow.Sqr + hotWindow.Sqr + vitrageDoor.Sqr
+	totalWindow.Hours = coldWindow.Hours + hotWindow.Hours + vitrageDoor.Hours
+	totalWindow.Money = coldWindow.Money + hotWindow.Money + vitrageDoor.Money
+
+	var result []StatsRow
+
+	result = append(result, coldWindow)
+	result = append(result, hotWindow)
+	result = append(result, vitrageDoor)
+	result = append(result, totalWindow)
+	result = append(result, unknown)
+
+	return result
+}
+
+func (g *GenerateExcelService) getDoorStats(products []storage.PEOProduct) []StatsRow {
+	var door1P, door15P, door2P, coldDoor, hotDoor, unknown StatsRow
+
+	door1P.Label = "Всего 1П дверей"
+	door15P.Label = "Всего 1.5П дверей"
+	door2P.Label = "Всего 2П дверей"
+
+	hotDoor.Label = "Всего теплых дверей"
+	coldDoor.Label = "Всего холодных дверей"
+
+	unknown.Label = "Неизвестное изделие(двери)"
+
+	for _, p := range products {
+		systema := strings.ToLower(p.Systema)
+		typeIzd := strings.ToLower(strings.TrimSpace(p.TypeIzd))
+
+		if p.Type == "door" {
+			if typeIzd == "1п" || typeIzd == "1пт" {
+				addStats(&door1P, p)
+			} else if typeIzd == "1.5п" || typeIzd == "1.5пт" {
+				addStats(&door15P, p)
+			} else if typeIzd == "2п" || typeIzd == "2пт" {
+				addStats(&door2P, p)
+			} else {
+				addStats(&unknown, p)
+			}
+
+			if systema == "х" || systema == "x" {
+				addStats(&coldDoor, p)
+			} else if systema == "т" {
+				addStats(&hotDoor, p)
+			}
+		}
+	}
+
+	var result []StatsRow
+
+	result = append(result, door1P)
+	result = append(result, door15P)
+	result = append(result, door2P)
+	result = append(result, coldDoor)
+	result = append(result, hotDoor)
+	result = append(result, unknown)
+
+	return result
+}
+
+// Вспомогательная функция, чтобы не дублировать код прибавления цифр
+func addStats(row *StatsRow, p storage.PEOProduct) {
+	row.Count += p.Count
+	row.Sqr += p.Sqr
+	row.Hours += p.TotalTime
+	row.Money += p.NormMoney
 }

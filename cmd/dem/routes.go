@@ -111,7 +111,7 @@ func routes(cfg config.Config, log *slog.Logger, storage *mysql.Storage, service
 
 	adminRouter.Get("/all_templates", gettemplate.GetAllTemplatesAdmin(log, storage))
 	adminRouter.Get("/template", gettemplate.GetTemplatesByCodeAdmin(log, storage))
-	adminRouter.Put("/template/update/{code}", uptemplate.UpdateTemplateAdmin(log, storage))
+	adminRouter.Put("/template/update/{id}", uptemplate.UpdateTemplateAdmin(log, storage))
 	adminRouter.Post("/template/new", savetemplate.SaveTemplateAdmin(log, storage))
 	adminRouter.Get("/coefficient", getadmincoef.GetCoefficientAdmin(log, storage))
 	adminRouter.Put("/coefficient/update", upadmincoef.UpdateCoefficientAdmin(log, storage))

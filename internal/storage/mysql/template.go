@@ -86,13 +86,13 @@ func (s *Storage) GetAllTemplates(ctx context.Context) ([]*storage.Template, err
 	return templates, nil
 }
 
-func (s *Storage) GetTemplateByCodeAdmin(ctx context.Context, code string) (*storage.Template, error) {
+func (s *Storage) GetTemplateByCodeAdmin(ctx context.Context, id int64) (*storage.Template, error) {
 	const op = "storage.mysql.sql.GetTemplateByCodeAdmin"
 
 	query := `
 		SELECT id, code, name, category, operations, systema, izd, profile, rules, is_active, head_name
 		FROM dem_templates_al 
-		WHERE code = ?
+		WHERE id = ?
 	`
 
 	template := &storage.Template{}
@@ -100,7 +100,7 @@ func (s *Storage) GetTemplateByCodeAdmin(ctx context.Context, code string) (*sto
 	// Сканируем JSON как строку
 	var operationsJSON string
 	var rulesJSON string
-	err := s.db.QueryRowContext(ctx, query, code).Scan(
+	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&template.ID,
 		&template.Code,
 		&template.Name,
@@ -115,7 +115,7 @@ func (s *Storage) GetTemplateByCodeAdmin(ctx context.Context, code string) (*sto
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("%s: шаблон с code='%s' не найден: %w", op, code, err)
+			return nil, fmt.Errorf("%s: шаблон с code='%v' не найден: %w", op, id, err)
 		}
 		return nil, fmt.Errorf("%s: выполнение запроса завершилось ошибкой: %w", op, err)
 	}
@@ -151,7 +151,7 @@ func (s *Storage) GetAllTemplatesAdmin(ctx context.Context) ([]*storage.Template
 
 		err := rows.Scan(&template.ID, &template.Code, &template.Name, &template.Category, &template.Systema, &template.TypeIzd, &template.Profile, &template.IsActive)
 		if err != nil {
-			return nil, fmt.Errorf("%s: ошибка сканирования строки: %w", op, err)
+			return nil, fmt.Errorf("%s: ошибка сканирования строк: %w", op, err)
 		}
 
 		templates = append(templates, template)
@@ -164,13 +164,13 @@ func (s *Storage) GetAllTemplatesAdmin(ctx context.Context) ([]*storage.Template
 	return templates, nil
 }
 
-func (s *Storage) UpdateTemplateAdmin(ctx context.Context, code int, update storage.TemplateAdmin) error {
+func (s *Storage) UpdateTemplateAdmin(ctx context.Context, id int, update storage.TemplateAdmin) error {
 	const op = "storage.mysql.TemplateAdmin"
 
-	stmt := `UPDATE dem_templates_al SET category=?, is_active=?, name=?, profile=?, systema=?, izd=?, operations=?, head_name=? WHERE code=?`
+	stmt := `UPDATE dem_templates_al SET code=?, category=?, is_active=?, name=?, profile=?, systema=?, izd=?, operations=?, head_name=? WHERE code=?`
 
-	_, err := s.db.ExecContext(ctx, stmt, update.Category, update.IsActive, update.Name, update.Profile,
-		update.Systema, update.TypeIzd, update.Operation, update.HeadName, code)
+	_, err := s.db.ExecContext(ctx, stmt, update.Code, update.Category, update.IsActive, update.Name, update.Profile,
+		update.Systema, update.TypeIzd, update.Operation, update.HeadName, id)
 	if err != nil {
 		return fmt.Errorf("%s: ошибка обновления шаблона нормирования: %w", op, err)
 	}

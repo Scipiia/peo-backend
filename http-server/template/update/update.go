@@ -12,22 +12,22 @@ import (
 )
 
 type TemplateUpdateProvider interface {
-	UpdateTemplateAdmin(ctx context.Context, code int, update storage.TemplateAdmin) error
+	UpdateTemplateAdmin(ctx context.Context, id int, update storage.TemplateAdmin) error
 }
 
 func UpdateTemplateAdmin(log *slog.Logger, temp TemplateUpdateProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.UpdateTemplateAdmin"
 
-		code := chi.URLParam(r, "code")
-		templCode, err := strconv.Atoi(code)
+		idStr := chi.URLParam(r, "id")
+		id, err := strconv.Atoi(idStr)
 		if err != nil {
 			http.Error(w, "неверный ID шаблона", http.StatusBadRequest)
 			return
 		}
 
-		// Распарсить тело запроса
 		var req struct {
+			Code       string              `json:"code"`
 			Category   string              `json:"category"`
 			IsActive   bool                `json:"is_active"`
 			Name       string              `json:"name"`
@@ -52,7 +52,8 @@ func UpdateTemplateAdmin(log *slog.Logger, temp TemplateUpdateProvider) http.Han
 			return
 		}
 
-		err = temp.UpdateTemplateAdmin(r.Context(), templCode, storage.TemplateAdmin{
+		err = temp.UpdateTemplateAdmin(r.Context(), id, storage.TemplateAdmin{
+			Code:      req.Code,
 			Category:  req.Category,
 			IsActive:  req.IsActive,
 			Name:      req.Name,
@@ -63,7 +64,7 @@ func UpdateTemplateAdmin(log *slog.Logger, temp TemplateUpdateProvider) http.Han
 			HeadName:  req.HeadName,
 		})
 		if err != nil {
-			log.Error(fmt.Sprintf("% s: %v", op, err))
+			log.Error(fmt.Sprintf("%s: %v", op, err))
 			http.Error(w, "ошибка обновления шаблона", http.StatusInternalServerError)
 			return
 		}

@@ -17,17 +17,14 @@ func GenerateReportExcel(log *slog.Logger, gen GenerateExcelHandler) http.Handle
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.norm.GenerateReportExcel"
 
-		// Парсинг параметров (как у тебя)
 		fromStr := r.URL.Query().Get("from")
 		toStr := r.URL.Query().Get("to")
 		orderNum := r.URL.Query().Get("order_num")
 		typeIzd := r.URL.Query()["type"]
 
-		// Логика с датами (оставляем твою, она хорошая)
 		now := time.Now()
 		startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 
-		// Функция парсинга внутри (ок, но можно вынести)
 		fDate, err := time.Parse("2006-01-02", fromStr)
 		if err != nil && fromStr != "" {
 			http.Error(w, "invalid from date", http.StatusBadRequest)
@@ -53,9 +50,7 @@ func GenerateReportExcel(log *slog.Logger, gen GenerateExcelHandler) http.Handle
 			Type:     typeIzd,
 		}
 
-		//fmt.Printf("TYPE handle %s", filter.Type)
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second) // На Excel можно побольше времени
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		excelBytes, err := gen.GenerateExcel(ctx, filter)
@@ -65,8 +60,7 @@ func GenerateReportExcel(log *slog.Logger, gen GenerateExcelHandler) http.Handle
 			return
 		}
 
-		// ФОРМИРУЕМ ОТВЕТ
-		fileName := fmt.Sprintf("PEO_Report_%s.xlsx", time.Now().Format("2006-01-02_150405"))
+		fileName := fmt.Sprintf("test_%s.xlsx", time.Now().Format("2006-01-02_150405"))
 
 		w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 		w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
