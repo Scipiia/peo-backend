@@ -3,6 +3,7 @@ package recalculate_norm
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
@@ -40,6 +41,7 @@ func CalculateNormOperations(log *slog.Logger, calc NormCalculator) http.Handler
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
+		fmt.Printf("TYPE IZD", req.TypeIzd)
 		norm, ctxData, err := calc.CalculateNorm(ctx, req.OrderNum, req.Position, req.TypeIzd, req.TemplateCode, req.ItemCount)
 		if err != nil {
 			log.Error("Failed to recalculate norm", slog.String("error", err.Error()))

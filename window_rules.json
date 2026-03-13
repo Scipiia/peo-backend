@@ -14,7 +14,7 @@
     "condition": {
       "HasImpost": true
     },
-    "operation": "impost_frezer",
+    "operation": "imp_frezer",
     "unitField": "HasImpostCount",
     "value_per_unit": 0.033,
     "minutes_per_unit": 2
@@ -26,8 +26,8 @@
     },
     "operation": "impost_sverlo",
     "unitField": "HasImpostCount",
-    "value_per_unit": 0.017,
-    "minutes_per_unit": 1
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
   },
   {
     "mode": "multiplied",
@@ -75,6 +75,22 @@
   },
   {
     "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "yst_ypl",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.189,
+    "minutes_per_unit": 11.34
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "yst_ypl_falc",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.167,
+    "minutes_per_unit": 10
+  },
+  {
+    "mode": "additivePlusMultiplied",
     "condition": {
       "StvWindowCount": {
         "min": 1
@@ -92,7 +108,7 @@
         "min": 1
       }
     },
-    "operation": "rybka_tag",
+    "operation": "napil_tag_stv",
     "unitField": "TagCountWin",
     "value_per_unit": 0.008,
     "minutes_per_unit": 0.5
@@ -104,9 +120,57 @@
         "min": 1
       }
     },
-    "operation": "podg_tag_yst_stv",
+    "operation": "obr_tag_stv",
     "unitField": "TagCountWin",
-    "value_per_unit": 0.017,
-    "minutes_per_unit": 1
+    "value_per_unit": 0.025,
+    "minutes_per_unit": 1.5
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "opres",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.047,
+    "minutes_per_unit": 2.8
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "meh_obr_pzr",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "obr_stv",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.25,
+    "minutes_per_unit": 15
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "sles_obr_yst_furn",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "promej_sb_stv",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.25,
+    "minutes_per_unit": 15
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "promej_sb_ram",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.25,
+    "minutes_per_unit": 15
   }
 ]

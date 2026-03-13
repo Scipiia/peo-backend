@@ -35,9 +35,10 @@ type Context struct {
 	StublinaCount float64
 
 	//HasStvT   bool
-	StvWindowCount float64
-	StvTCount600   float64
-	StvTCount400   float64
+	StvWindowCount   float64
+	StvTCount600     float64
+	StvTCount400     float64
+	StvCountForOpres float64
 
 	MnogozapZamok float64
 	StandZamok    float64
@@ -55,6 +56,9 @@ type Context struct {
 	HasPritvorKP40 bool
 
 	TagCountWin float64
+
+	//Loggia
+	logRamCount float64
 
 	//StvorkiWith3Petli float64
 	// Добавишь больше признаков позже: тип профиля, площадь, кол-во камер и т.д.
@@ -203,7 +207,9 @@ func BuildContextWindow(materials []*storage.KlaesMaterials) Context {
 
 	}
 
-	log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f, StvCount=%f, TagCount=%f", ctx.HasImpost, ctx.ImpostCount, ctx.StvWindowCount, ctx.TagCountWin)
+	ctx.StvCountForOpres = ctx.StvWindowCount / 4.0
+
+	log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f, StvCount=%f, TagCount=%f, StvCountAll=%f", ctx.HasImpost, ctx.ImpostCount, ctx.StvWindowCount, ctx.TagCountWin, ctx.StvCountForOpres)
 
 	return ctx
 }
@@ -292,6 +298,22 @@ func BuildContextDoor(materials []*storage.KlaesMaterials, dopInfo []*storage.Do
 	return ctx
 }
 
+func BuildContextLoggia(materials []*storage.KlaesMaterials) Context {
+	ctx := Context{Type: "loggia"}
+
+	for _, m := range materials {
+		name := strings.TrimSpace(m.NameMat)
+
+		if name == "Рама нижняя" {
+			ctx.logRamCount += m.Count
+		}
+	}
+
+	log.Printf("Смотрим материалы: logRamCount=%v", ctx.logRamCount)
+
+	return ctx
+}
+
 func BuildContext(materials []*storage.KlaesMaterials, dopInfo []*storage.DopInfoDemPrice, typeIzd string, itemCount int) (Context, error) {
 	switch typeIzd {
 	case "glyhar":
@@ -300,6 +322,8 @@ func BuildContext(materials []*storage.KlaesMaterials, dopInfo []*storage.DopInf
 		return BuildContextWindow(materials), nil
 	case "door":
 		return BuildContextDoor(materials, dopInfo), nil
+	case "loggia":
+		return BuildContextLoggia(materials), nil
 	default:
 		return Context{}, fmt.Errorf("неизвестный тип изделия: %s", typeIzd)
 	}
@@ -403,6 +427,8 @@ func getCountMaterials(field string, ctx Context, itemCount int) float64 {
 		return ctx.PetliForNaveshCount
 	case "CounterCount":
 		return ctx.CounterCount
+	case "StvCountForOpres":
+		return ctx.StvCountForOpres
 	case "ItemCountForRDRH":
 		if ctx.HasPetliRDRH {
 			return float64(itemCount)

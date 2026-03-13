@@ -5,6 +5,7 @@ var (
 	MnogozapZamok = map[string]bool{
 		"Многозапорный замок Stublina с управлением от ручки":   true,
 		"Многозапорный замок KFV AS4350 с управлением от ручки": true,
+		"Многозапорный замок KFV AS2750 с управлением от ключа": true,
 	}
 
 	StandZamok = map[string]bool{
@@ -37,6 +38,7 @@ var (
 	StvWindow = map[string]bool{
 		"Створка оконная усиленная прямоугольная": true,
 		"Створка оконная":                         true,
+		"Створка оконная усиленная":               true,
 	}
 
 	StvTCount600 = map[string]bool{
