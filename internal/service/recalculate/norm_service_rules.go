@@ -58,7 +58,10 @@ type Context struct {
 	TagCountWin float64
 
 	//Loggia
-	logRamCount float64
+	logRamCount     float64
+	logStvCount     float64
+	logSoedPrice    float64
+	logPritvorPrice float64
 
 	//StvorkiWith3Petli float64
 	// Добавишь больше признаков позже: тип профиля, площадь, кол-во камер и т.д.
@@ -99,7 +102,7 @@ type Context struct {
 //}
 
 // TODO приколы с горутинами
-func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, Context, error) {
+func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int, permisDopMaterial bool) ([]storage.Operation, Context, error) {
 	const op = "service.norm_service_rules.CalculateNorm"
 
 	var (
@@ -136,12 +139,19 @@ func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos in
 
 	err := g.Wait()
 	if err != nil {
-		return nil, Context{}, err
+		return nil, Context{}, fmt.Errorf("%s %w", op, err)
 	}
 
-	buildContext, err := BuildContext(materials, dopInfo, typeIzd, itemCount)
+	var dopInfoToUse []*storage.DopInfoDemPrice
+	if permisDopMaterial == true {
+		dopInfoToUse = dopInfo
+	} else {
+		dopInfoToUse = []*storage.DopInfoDemPrice{}
+	}
+
+	buildContext, err := BuildContext(materials, dopInfoToUse, typeIzd, itemCount)
 	if err != nil {
-		return nil, Context{}, err
+		return nil, Context{}, fmt.Errorf("%s %w", op, err)
 	}
 
 	result := ApplyRules(template.Operations, template.Rules, buildContext, itemCount)
@@ -298,7 +308,7 @@ func BuildContextDoor(materials []*storage.KlaesMaterials, dopInfo []*storage.Do
 	return ctx
 }
 
-func BuildContextLoggia(materials []*storage.KlaesMaterials) Context {
+func BuildContextLoggia(materials []*storage.KlaesMaterials, dopInfo []*storage.DopInfoDemPrice) Context {
 	ctx := Context{Type: "loggia"}
 
 	for _, m := range materials {
@@ -307,9 +317,37 @@ func BuildContextLoggia(materials []*storage.KlaesMaterials) Context {
 		if name == "Рама нижняя" {
 			ctx.logRamCount += m.Count
 		}
+
+		if name == "Створка верх/низ" {
+			ctx.logStvCount += m.Count
+			//fmt.Println(ctx.logStvCount)
+		}
 	}
 
-	log.Printf("Смотрим материалы: logRamCount=%v", ctx.logRamCount)
+	for _, d := range dopInfo {
+		name := strings.TrimSpace(d.NamePosition)
+
+		// Тут подставь точные названия из твоей базы
+		if strings.Contains(name, "соединитель") ||
+			strings.Contains(name, "труба") ||
+			strings.Contains(name, "профиль соединительный") {
+			ctx.logSoedPrice += d.Count
+
+			log.Printf("[Loggia] Добавлено соединителей из dem_price: %.0f", d.Count)
+		}
+
+		if strings.Contains(name, "притвор") {
+			ctx.logPritvorPrice += d.Count
+
+			log.Printf("[Loggia] Добавлено притворов из dem_price: %.0f", d.Count)
+		}
+	}
+
+	if ctx.logStvCount >= 2 {
+		ctx.logStvCount = ctx.logStvCount / 2
+	}
+
+	log.Printf("Смотрим материалы: logRamCount=%v, logStvCount=%v, logSoed=%v, logPritvor=%f", ctx.logRamCount, ctx.logStvCount, ctx.logSoedPrice, ctx.logPritvorPrice)
 
 	return ctx
 }
@@ -323,7 +361,7 @@ func BuildContext(materials []*storage.KlaesMaterials, dopInfo []*storage.DopInf
 	case "door":
 		return BuildContextDoor(materials, dopInfo), nil
 	case "loggia":
-		return BuildContextLoggia(materials), nil
+		return BuildContextLoggia(materials, dopInfo), nil
 	default:
 		return Context{}, fmt.Errorf("неизвестный тип изделия: %s", typeIzd)
 	}

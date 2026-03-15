@@ -3,7 +3,6 @@ package recalculate_norm
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
@@ -13,7 +12,8 @@ import (
 )
 
 type NormCalculator interface {
-	CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, recalculate.Context, error)
+	//CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, recalculate.Context, error)
+	CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int, permisDopMaterial bool) ([]storage.Operation, recalculate.Context, error)
 }
 
 type Resp struct {
@@ -26,11 +26,12 @@ func CalculateNormOperations(log *slog.Logger, calc NormCalculator) http.Handler
 		const op = "handler.norm.CalculateNormOperations"
 
 		var req struct {
-			OrderNum     string `json:"order_num"`
-			Position     int    `json:"position"`
-			TypeIzd      string `json:"type"`
-			TemplateCode string `json:"template"`
-			ItemCount    int    `json:"count"`
+			OrderNum          string `json:"order_num"`
+			Position          int    `json:"position"`
+			TypeIzd           string `json:"type"`
+			TemplateCode      string `json:"template"`
+			ItemCount         int    `json:"count"`
+			PermisDopMaterial bool   `json:"permis_dop_material"`
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -38,11 +39,17 @@ func CalculateNormOperations(log *slog.Logger, calc NormCalculator) http.Handler
 			return
 		}
 
+		if req.TypeIzd == "door" {
+			req.PermisDopMaterial = true
+		}
+
+		log.Info("Calculating norm", "type", req.TypeIzd, "order", req.OrderNum, "pos", req.Position, "permis", req.PermisDopMaterial)
+		//req.PermisDopMaterial = true
+
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		fmt.Printf("TYPE IZD", req.TypeIzd)
-		norm, ctxData, err := calc.CalculateNorm(ctx, req.OrderNum, req.Position, req.TypeIzd, req.TemplateCode, req.ItemCount)
+		norm, ctxData, err := calc.CalculateNorm(ctx, req.OrderNum, req.Position, req.TypeIzd, req.TemplateCode, req.ItemCount, req.PermisDopMaterial)
 		if err != nil {
 			log.Error("Failed to recalculate norm", slog.String("error", err.Error()))
 			http.Error(w, "Internal error", http.StatusInternalServerError)
