@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"golang.org/x/sync/errgroup"
 	"log"
+	"math"
 	"strings"
 	"vue-golang/internal/constants"
 	"vue-golang/internal/storage"
@@ -58,10 +59,11 @@ type Context struct {
 	TagCountWin float64
 
 	//Loggia
-	logRamCount     float64
-	logStvCount     float64
-	logSoedPrice    float64
-	logPritvorPrice float64
+	LogRamCount     float64
+	LogStvCount     float64
+	LogSoedPrice    float64
+	LogPritvorPrice float64
+	LogKomplVst     float64
 
 	//StvorkiWith3Petli float64
 	// Добавишь больше признаков позже: тип профиля, площадь, кол-во камер и т.д.
@@ -159,7 +161,7 @@ func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos in
 	return result, buildContext, nil
 }
 
-func BuildContextGlyhar(materials []*storage.KlaesMaterials, itemCount int) Context {
+func BuildContextGlyhar(materials []*storage.KlaesMaterials) Context {
 	ctx := Context{Type: "glyhar"}
 
 	for _, m := range materials {
@@ -169,24 +171,45 @@ func BuildContextGlyhar(materials []*storage.KlaesMaterials, itemCount int) Cont
 		if constants.ImpostCount[name] {
 			ctx.HasImpost = true
 			ctx.ImpostCount += m.Count
+			//TODO (под вопросом счетчик контуров изделия(каждый контур разделен импостом))
 			//ctx.CounterCount++
 		}
 
-		if constants.StvTCount600[name] && m.Width <= 615 {
+		if (constants.StvTCount600[name] || constants.RamRigelGl[name]) && m.Width <= 615 {
 			ctx.StvTCount600 += m.Count
 		}
 
-		if constants.StvTCount400[name] && m.Width <= 400 {
+		if (constants.StvTCount400[name] || constants.RamRigelGl[name]) && m.Width <= 400 {
 			ctx.StvTCount400 += m.Count
 		}
 	}
 
 	//ctx.CounterCount = ctx.ImpostCount * float64(itemCount)
 
-	log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f, StvCount=%f, КолКонтуров=%f", ctx.HasImpost, ctx.ImpostCount, ctx.StvWindowCount, ctx.CounterCount)
+	log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f, StvCount600=%f, StvCount400=%f", ctx.HasImpost, ctx.ImpostCount, ctx.StvTCount600, ctx.StvTCount400)
 
 	return ctx
 }
+
+//type Element struct {
+//	Type  string
+//	Count float64
+//}
+//
+//func ExtractElementWindow(materials []*storage.KlaesMaterials) []Element {
+//	var elements []Element
+//
+//	for _, m := range materials {
+//		name := strings.TrimSpace(m.NameMat)
+//
+//		if constants.StvWindow[name] {
+//			elements = append(elements, Element{
+//				Type:  "sash",
+//				Count: m.Count,
+//			})
+//		}
+//	}
+//}
 
 func BuildContextWindow(materials []*storage.KlaesMaterials) Context {
 	ctx := Context{Type: "window"}
@@ -232,8 +255,10 @@ func BuildContextDoor(materials []*storage.KlaesMaterials, dopInfo []*storage.Do
 		name := strings.TrimSpace(m.NameMat)
 
 		if constants.ImpostCount[name] {
-			ctx.HasImpost = true
-			ctx.ImpostCount += m.Count
+			if !strings.HasSuffix(strings.TrimSpace(m.ArticulMat), ".") {
+				ctx.HasImpost = true
+				ctx.ImpostCount += m.Count
+			}
 		}
 
 		if constants.StublinaCount[name] {
@@ -277,7 +302,7 @@ func BuildContextDoor(materials []*storage.KlaesMaterials, dopInfo []*storage.Do
 		//TODO замок
 		if constants.MnogozapZamok[name] {
 			ctx.MnogozapZamok += m.Count
-			ctx.StandZamok += m.Count
+			//ctx.StandZamok += m.Count
 		}
 		if constants.StandZamok[name] {
 			ctx.StandZamok += m.Count
@@ -301,9 +326,9 @@ func BuildContextDoor(materials []*storage.KlaesMaterials, dopInfo []*storage.Do
 	}
 
 	//log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f, StublinaCount=%v, StvTCount600=%f, PetliRDRH=%v, MnogoazapoR=%f, PetliRolik=%v, PetliStand=%v,Petli#Section=%v, Pritvor=%v, PetliFural=%v, StandZamok=%v",
-	//	ctx.HasImpost, ctx.ImpostCount, ctx.StublinaCount, ctx.StvTCount600, ctx.HasPetliRDRH, ctx.MnogozapZamok, ctx.PetliRolik, ctx.PetliStand, ctx.Petli3Section, ctx.PritvorKP40, ctx.HasPetliFural, ctx.StandZamok)
+	//ctx.HasImpost, ctx.ImpostCount, ctx.StublinaCount, ctx.StvTCount600, ctx.HasPetliRDRH, ctx.MnogozapZamok, ctx.PetliRolik, ctx.PetliStand, ctx.Petli3Section, ctx.PritvorKP40, ctx.HasPetliFural, ctx.StandZamok)
 
-	log.Printf("Смотрим материалы: PetliStand=%v, PetliRolik=%v, Petli3Section=%v, PetliFural=%v, PetliRDRH=%v, PetliForNaveshCount=%v", ctx.PetliStand, ctx.PetliRolik, ctx.Petli3Section, ctx.PetliFural, ctx.PetliRDRH, ctx.PetliForNaveshCount)
+	//log.Printf("Смотрим материалы: PetliStand=%v, PetliRolik=%v, Petli3Section=%v, PetliFural=%v, PetliRDRH=%v, PetliForNaveshCount=%v", ctx.PetliStand, ctx.PetliRolik, ctx.Petli3Section, ctx.PetliFural, ctx.PetliRDRH, ctx.PetliForNaveshCount)
 
 	return ctx
 }
@@ -314,13 +339,26 @@ func BuildContextLoggia(materials []*storage.KlaesMaterials, dopInfo []*storage.
 	for _, m := range materials {
 		name := strings.TrimSpace(m.NameMat)
 
-		if name == "Рама нижняя" {
-			ctx.logRamCount += m.Count
+		if name == "Рама нижняя" || name == "Рама нижняя Сл.90" {
+			ctx.LogRamCount += m.Count
 		}
 
 		if name == "Створка верх/низ" {
-			ctx.logStvCount += m.Count
+			ctx.LogStvCount += m.Count
 			//fmt.Println(ctx.logStvCount)
+		}
+
+		if name == "Соединитель /сл.60-сл.60/" {
+			ctx.LogSoedPrice += m.Count
+			//log.Printf("logSOED=%f", ctx.LogSoedPrice)
+		}
+
+		if name == "Притвор для ручки с защёлкой" {
+			ctx.LogPritvorPrice += m.Count
+		}
+
+		if name == "Набор вставок" {
+			ctx.LogKomplVst += m.Count
 		}
 	}
 
@@ -328,26 +366,28 @@ func BuildContextLoggia(materials []*storage.KlaesMaterials, dopInfo []*storage.
 		name := strings.TrimSpace(d.NamePosition)
 
 		// Тут подставь точные названия из твоей базы
-		if strings.Contains(name, "соединитель") ||
-			strings.Contains(name, "труба") ||
-			strings.Contains(name, "профиль соединительный") {
-			ctx.logSoedPrice += d.Count
+		if strings.Contains(name, "Соединитель") ||
+			strings.Contains(name, "Труба") ||
+			strings.Contains(name, "Поворот 90гр") {
+			ctx.LogSoedPrice += d.Count
 
 			log.Printf("[Loggia] Добавлено соединителей из dem_price: %.0f", d.Count)
 		}
 
-		if strings.Contains(name, "притвор") {
-			ctx.logPritvorPrice += d.Count
+		if strings.Contains(name, "Притвор") {
+			ctx.LogPritvorPrice += d.Count
 
 			log.Printf("[Loggia] Добавлено притворов из dem_price: %.0f", d.Count)
 		}
 	}
 
-	if ctx.logStvCount >= 2 {
-		ctx.logStvCount = ctx.logStvCount / 2
+	if ctx.LogStvCount >= 2 {
+		ctx.LogStvCount = ctx.LogStvCount / 2
 	}
 
-	log.Printf("Смотрим материалы: logRamCount=%v, logStvCount=%v, logSoed=%v, logPritvor=%f", ctx.logRamCount, ctx.logStvCount, ctx.logSoedPrice, ctx.logPritvorPrice)
+	ctx.LogKomplVst = math.Ceil(ctx.LogKomplVst)
+
+	log.Printf("Смотрим материалы: logRamCount=%v, logStvCount=%v, logSoed=%v, logPritvor=%f, komplCount=%f", ctx.LogRamCount, ctx.LogStvCount, ctx.LogSoedPrice, ctx.LogPritvorPrice, ctx.LogKomplVst)
 
 	return ctx
 }
@@ -355,7 +395,7 @@ func BuildContextLoggia(materials []*storage.KlaesMaterials, dopInfo []*storage.
 func BuildContext(materials []*storage.KlaesMaterials, dopInfo []*storage.DopInfoDemPrice, typeIzd string, itemCount int) (Context, error) {
 	switch typeIzd {
 	case "glyhar":
-		return BuildContextGlyhar(materials, itemCount), nil
+		return BuildContextGlyhar(materials), nil
 	case "window":
 		return BuildContextWindow(materials), nil
 	case "door":
@@ -371,10 +411,10 @@ func ApplyRules(operations []storage.Operation, rules []storage.Rule, ctx Contex
 	result := make([]storage.Operation, len(operations))
 	copy(result, operations)
 
-	log.Printf("Загружено правил: %d", len(rules))
-	for i, r := range rules {
-		log.Printf("Правило %d: op=%s, cond=%v", i, r.Operation, r.Condition)
-	}
+	//log.Printf("Загружено правил: %d", len(rules))
+	//for i, r := range rules {
+	//	log.Printf("Правило %d: op=%s, cond=%v", i, r.Operation, r.Condition)
+	//}
 	//itemCount := 2
 
 	for i := range result {
@@ -430,6 +470,11 @@ func ApplyRules(operations []storage.Operation, rules []storage.Rule, ctx Contex
 }
 
 func getCountMaterials(field string, ctx Context, itemCount int) float64 {
+
+	if field == "itemsCount" {
+		return float64(itemCount)
+	}
+
 	switch field {
 	case "HasImpostCount":
 		return ctx.ImpostCount
@@ -468,10 +513,21 @@ func getCountMaterials(field string, ctx Context, itemCount int) float64 {
 	case "StvCountForOpres":
 		return ctx.StvCountForOpres
 	case "ItemCountForRDRH":
-		if ctx.HasPetliRDRH {
-			return float64(itemCount)
-		}
-		return 0
+		return ctx.PetliRDRH
+	case "LogRamCount":
+		return ctx.LogRamCount
+	case "LogStvCount":
+		return ctx.LogStvCount
+	case "LogPritvorPrice":
+		return ctx.LogPritvorPrice
+	case "LogSoedPrice":
+		return ctx.LogSoedPrice
+	case "LogKomplVst":
+		return ctx.LogKomplVst
+		//if ctx.HasPetliRDRH {
+		//	return float64(itemCount)
+		//}
+		//return 0
 	//case "StvorkiWith3Petli":
 	//return ctx.StvorkiWith3Petli
 	default:
@@ -536,6 +592,11 @@ func fieldMatches(key string, expected interface{}, ctx Context) bool {
 		return compareFloatField(ctx.TagCountWin, expected)
 	case "PetliForNaveshCount":
 		return compareFloatField(ctx.PetliForNaveshCount, expected)
+	//case "LogRamCount":
+	//	return compareFloatField(ctx.LogRamCount, expected)
+	//case "LogStvCount":
+	//	return compareFloatField(ctx.LogStvCount, expected)
+
 	//case "StvorkiWith3Petli":
 	//return compareFloatField(ctx.StvorkiWith3Petli, expected)
 	//case "ImpostCount":

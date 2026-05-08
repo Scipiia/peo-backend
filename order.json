@@ -1,12 +1,77 @@
 [
   {
+    "mode": "multiplied",
+    "condition": {"HasImpost": true},
+    "operation": "impost_napil",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.025,
+    "minutes_per_unit": 1.5
+  },
+  {
+    "mode": "multiplied",
+    "condition": {"HasImpost": true},
+    "operation": "imp_frezer",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
+  },
+  {
+    "mode": "multiplied",
+    "condition": {"HasImpost": true},
+    "operation": "impost_sverlo",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
+  },
+  {
+    "mode": "multiplied",
+    "condition": {"HasImpost": true},
+    "operation": "impost_yst",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.050,
+    "minutes_per_unit": 3
+  },
+  {
+    "mode": "multiplied",
+    "condition": {"StvTCount600": {"min": 1}},
+    "operation": "dop_time_napil",
+    "unitField": "StvTCount600",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
+  },
+  {
+    "mode": "multiplied",
+    "condition": {
+      "StvTCount400": {
+        "min": 1
+      }
+    },
+    "operation": "dop_time_sbor",
+    "unitField": "StvTCount400",
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "zashivka_stv",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.200,
+    "minutes_per_unit": 12
+  }
+]
+
+
+
+[
+  {
     "name": "podg_obor",
     "type": "number",
     "count": 1,
     "group": "ign",
     "label": "Подготовка оборудования",
-    "value": 0.083,
-    "minutes": 5,
+    "value": 0.05,
+    "minutes": 3,
     "required": true
   },
   {
@@ -33,10 +98,20 @@
     "name": "obr_ram_pbx",
     "type": "number",
     "count": 1,
+    "group": "ign",
+    "label": "Настройка РВХ",
+    "value": 0.050,
+    "minutes": 3,
+    "required": true
+  },
+  {
+    "name": "obr_ram_pbx",
+    "type": "number",
+    "count": 1,
     "group": "",
     "label": "Обработка рамы (PBX)",
-    "value": 0.125,
-    "minutes": 7.5,
+    "value": 0.042,
+    "minutes": 2.5,
     "required": true
   },
   {

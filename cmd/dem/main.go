@@ -7,6 +7,7 @@ import (
 	"os"
 	"vue-golang/internal/config"
 	generate_excel "vue-golang/internal/service/generate-excel"
+	get_norm_mosquito "vue-golang/internal/service/get-norm-mosquito"
 	"vue-golang/internal/service/recalculate"
 	"vue-golang/internal/storage/mysql"
 )
@@ -16,6 +17,19 @@ const (
 	envDev   = "dev"
 	envProd  = "prod"
 )
+
+type Service struct {
+	RecalculateService   *recalculate.NormService
+	GenerateExcelService *generate_excel.GenerateExcelService
+	MosquitoService      *get_norm_mosquito.MosquitoService
+}
+
+type App struct {
+	Config  *config.Config
+	Log     *slog.Logger
+	Storage *mysql.Storage
+	Service Service
+}
 
 func main() {
 	cfg := config.MustConfig()
@@ -28,14 +42,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	normService := recalculate.NewNormService(storage)
+	recalculateService := recalculate.NewNormService(storage)
 	generateExcelService := generate_excel.NewGenerateService(storage)
+	mosquitoService := get_norm_mosquito.NewMosquitoService(storage)
 
 	log.Info("server started", slog.String("address", cfg.Address))
 
+	app := &App{
+		Config:  cfg,
+		Log:     log,
+		Storage: storage,
+		Service: Service{
+			RecalculateService:   recalculateService,
+			GenerateExcelService: generateExcelService,
+			MosquitoService:      mosquitoService,
+		},
+	}
+
 	srv := &http.Server{
 		Addr:         cfg.Address,
-		Handler:      routes(*cfg, log, storage, normService, generateExcelService),
+		Handler:      routes(app),
 		ReadTimeout:  cfg.HTTPServer.Timeout,
 		WriteTimeout: cfg.HTTPServer.Timeout,
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,

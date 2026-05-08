@@ -1,0 +1,122 @@
+[
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "napil_ram_log",
+    "unitField": "LogRamCount",
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "napil_stv_log",
+    "unitField": "LogStvCount",
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "napil_pritvor_log",
+    "unitField": "LogPritvorPrice",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "napil_soed_log",
+    "unitField": "LogSoedPrice",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "frezer_ram_log",
+    "unitField": "LogRamCount",
+    "value_per_unit": 0.050,
+    "minutes_per_unit": 3
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "frezer_stv_log",
+    "unitField": "LogStvCount",
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "frezer_pritvor_log",
+    "unitField": "LogPritvorPrice",
+    "value_per_unit": 0.008,
+    "minutes_per_unit": 0.5
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "shtamp_stoek_log",
+    "unitField": "LogStvCount",
+    "value_per_unit": 0.025,
+    "minutes_per_unit": 1.5
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "ystan_rolik_fetr_log",
+    "unitField": "LogStvCount",
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "ystan_zashel_fetr_log",
+    "unitField": "LogStvCount",
+    "value_per_unit": 0.058,
+    "minutes_per_unit": 3.5
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "obrezen_log",
+    "unitField": "LogStvCount",
+    "value_per_unit": 0.167,
+    "minutes_per_unit": 10
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "sborka_stv_log",
+    "unitField": "LogStvCount",
+    "value_per_unit": 0.083,
+    "minutes_per_unit": 5
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "sborka_pritvor_log",
+    "unitField": "LogPritvorPrice",
+    "value_per_unit": 0.008,
+    "minutes_per_unit": 0.5
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "podg_komp_log",
+    "unitField": "LogKomplVst",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
+  },
+  {
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "upak_log",
+    "unitField": "LogRamCount",
+    "value_per_unit": 0.117,
+    "minutes_per_unit": 7
+  }
+]

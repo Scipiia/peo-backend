@@ -16,8 +16,8 @@
     },
     "operation": "imp_frezer",
     "unitField": "HasImpostCount",
-    "value_per_unit": 0.033,
-    "minutes_per_unit": 2
+    "value_per_unit": 0.05,
+    "minutes_per_unit": 3
   },
   {
     "mode": "multiplied",
@@ -34,7 +34,7 @@
     "condition": {
       "HasImpost": true
     },
-    "operation": "impost_yst",
+    "operation": "imp_sbor",
     "unitField": "HasImpostCount",
     "value_per_unit": 0.033,
     "minutes_per_unit": 2
@@ -53,11 +53,7 @@
   },
   {
     "mode": "multiplied",
-    "condition": {
-      "StvTCount400": {
-        "min": 1
-      }
-    },
+    "condition": {"StvTCount400": {"min": 1}},
     "operation": "dop_time_sbor",
     "unitField": "StvTCount400",
     "value_per_unit": 0.067,
@@ -65,10 +61,18 @@
   },
   {
     "mode": "additivePlusMultiplied",
-    "condition": {"HasImpost": true},
-    "operation": "yst_ypl_ugl_shtift_germet",
+    "condition": {},
+    "operation": "yst_yplotn",
     "unitField": "HasImpostCount",
-    "value_per_unit": 0.167,
-    "minutes_per_unit": 10
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
+  },
+  {
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "yst_zapoln",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.15,
+    "minutes_per_unit": 9
   }
 ]

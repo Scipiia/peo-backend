@@ -72,7 +72,7 @@
     "minutes_per_unit": 5
   },
   {
-    "mode": "multiplied",
+    "mode": "additivePlusMultiplied",
     "condition": {
       "MnogozapZamok": {
         "min": 1

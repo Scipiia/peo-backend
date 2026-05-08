@@ -72,7 +72,7 @@
     "minutes_per_unit": 5
   },
   {
-    "mode": "multiplied",
+    "mode": "additivePlusMultiplied",
     "condition": {
       "MnogozapZamok": {
         "min": 1
@@ -206,12 +206,12 @@
   {
     "mode": "multiplied",
     "condition": {
-      "StvorkiWith3Petli": {
+      "Petli3Section": {
         "min": 1
       }
     },
     "operation": "pereh_pdp",
-    "unitField": "StvorkiWith3Petli",
+    "unitField": "Petli3Section",
     "value_per_unit": 0.075,
     "minutes_per_unit": 4.5
   },

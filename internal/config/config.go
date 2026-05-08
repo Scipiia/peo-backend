@@ -16,6 +16,7 @@ type Config struct {
 	DBPort      int    `yaml:"db_port" env-default:"3306"`
 	DBName      string `yaml:"db_name" env-required:"true"`
 	ParseTime   bool   `yaml:"parse_time" env-required:"true"`
+	Charset     string `yaml:"charset"`
 
 	AdminLogin string `yaml:"admin_login"`
 	AdminPass  string `yaml:"admin_pass"`

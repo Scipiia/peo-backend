@@ -82,7 +82,7 @@
     "minutes_per_unit": 5
   },
   {
-    "mode": "multiplied",
+    "mode": "additivePlusMultiplied",
     "condition": {
       "MnogozapZamok": {
         "min": 1
@@ -205,8 +205,8 @@
     "condition": {"HasPetliRDRH": true},
     "operation": "navesh_stv_yst_otvplan_petl_rdrh",
     "unitField": "ItemCountForRDRH",
-    "value_per_unit": 0.717,
-    "minutes_per_unit": 43
+    "value_per_unit": 0.187,
+    "minutes_per_unit": 11.2
   },
   {
     "mode": "additivePlusMultiplied",

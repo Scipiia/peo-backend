@@ -11,9 +11,7 @@
   },
   {
     "mode": "multiplied",
-    "condition": {
-      "HasImpost": true
-    },
+    "condition": {"HasImpost": true},
     "operation": "dop_impost_frezer",
     "unitField": "HasImpostCount",
     "value_per_unit": 0.033,
@@ -21,9 +19,7 @@
   },
   {
     "mode": "multiplied",
-    "condition": {
-      "HasImpost": true
-    },
+    "condition": {"HasImpost": true},
     "operation": "dop_impost_sverl",
     "unitField": "HasImpostCount",
     "value_per_unit": 0.033,
@@ -51,9 +47,7 @@
   },
   {
     "mode": "additivePlusMultiplied",
-    "condition": {
-      "HasImpost": true
-    },
+    "condition": {"HasImpost": true},
     "operation": "yst_porog_ypl_derj_shetk_shtift",
     "unitField": "HasImpostCount",
     "value_per_unit": 0.017,
@@ -82,7 +76,7 @@
     "minutes_per_unit": 5
   },
   {
-    "mode": "multiplied",
+    "mode": "additivePlusMultiplied",
     "condition": {
       "MnogozapZamok": {
         "min": 1
@@ -206,8 +200,8 @@
     },
     "operation": "navesh_stv_yst_otv_plan1_reg_petli",
     "unitField": "ItemCountForRDRH",
-    "value_per_unit": 0.4,
-    "minutes_per_unit": 24
+    "value_per_unit": 0.2,
+    "minutes_per_unit": 12
   },
   {
     "mode": "additivePlusMultiplied",

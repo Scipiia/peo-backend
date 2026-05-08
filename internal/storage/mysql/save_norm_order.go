@@ -15,10 +15,12 @@ func (s *Storage) SaveNormOrder(ctx context.Context, result storage.OrderNormDet
 
 	strCustm := result.Customer
 	strCustmRune := []rune(strCustm)
-	trimStrCustm := string(strCustmRune[0:30])
+	if len(strCustmRune) > 30 {
+		strCustm = string(strCustmRune[:30])
+	}
 
 	exec, err := s.db.ExecContext(ctx, stmt, result.OrderNum, result.TemplateCode, result.Name, result.Count, result.TotalTime,
-		result.Type, result.PartType, result.ParentAssembly, result.ParentProductID, trimStrCustm, result.Position,
+		result.Type, result.PartType, result.ParentAssembly, result.ParentProductID, strCustm, result.Position,
 		result.Status, result.Systema, result.TypeIzd, result.Profile, result.Sqr)
 	if err != nil {
 		if mysqlErr, ok := err.(*mysql.MySQLError); ok && mysqlErr.Number == 1452 {

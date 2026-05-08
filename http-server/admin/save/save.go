@@ -10,7 +10,7 @@ import (
 )
 
 type EmployeesProvider interface {
-	CreateEmployerAdmin(ctx context.Context, emp storage.EmployeesAdmin) error
+	CreateEmployeeAdmin(ctx context.Context, input storage.CreateEmployeeInput) error
 }
 
 func SaveEmployerAdmin(log *slog.Logger, emp EmployeesProvider) http.HandlerFunc {
@@ -22,17 +22,18 @@ func SaveEmployerAdmin(log *slog.Logger, emp EmployeesProvider) http.HandlerFunc
 			return
 		}
 
-		var employer storage.EmployeesAdmin
+		var employer storage.CreateEmployeeInput
+
 		err := json.NewDecoder(r.Body).Decode(&employer)
 		if err != nil {
 			http.Error(w, "Неверный JSON", http.StatusBadRequest)
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 50*time.Millisecond)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		err = emp.CreateEmployerAdmin(ctx, employer)
+		err = emp.CreateEmployeeAdmin(ctx, employer)
 		if err != nil {
 			log.Error("Ошибка добавления сотрудника", "error", err)
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)

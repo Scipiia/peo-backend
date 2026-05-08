@@ -136,6 +136,7 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 
 	winStats := g.getWindowStats(products)
 	doorStats := g.getDoorStats(products)
+	loggiaStats := g.getLoggiaStats(products)
 
 	var allStats []StatsRow
 
@@ -143,13 +144,12 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 		allStats = append(allStats, winStats...)
 		allStats = append(allStats, doorStats...)
 	} else if reportType == "loggia" {
-		//allStats = append(allStats, loggiaStats...)
+		allStats = append(allStats, loggiaStats...)
 	}
 
 	startRowStats := len(products) + 10
 	f.SetCellValue(sheet, cellName(1, startRowStats), "Сводная статистика")
 
-	// 1. Создаем стиль для шапки статистики (серый фон, жирный)
 	statsHeaderStyle, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{Bold: true},
 		Fill: excelize.Fill{Type: "pattern", Color: []string{"CCCCCC"}, Pattern: 1},
@@ -184,6 +184,40 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			boldStyle, _ := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true}})
 			f.SetCellStyle(sheet, cellName(1, currentRow), cellName(5, currentRow), boldStyle)
 		}
+	}
+
+	empStats := g.getEmployeeStats(products, employees)
+	if len(empStats) > 0 {
+		startRowEmp := startRowStats + len(allStats) + 5
+
+		f.SetCellValue(sheet, cellName(1, startRowEmp), "Статистика по сотрудникам")
+
+		empHeaders := []string{"Сотрудник", "Н/ч(месяц)"}
+
+		//for week := 1; week <= 5; week++ {
+		//	empHeaders = append(empHeaders, fmt.Sprintf("Неделя %d", week))
+		//}
+
+		headerRow := startRowEmp + 1
+		for i, name := range empHeaders {
+			cell := cellName(i+1, headerRow)
+			f.SetCellValue(sheet, cell, name)
+			f.SetCellStyle(sheet, cell, cell, statsHeaderStyle) // используем тот же стиль, что и для сводной
+		}
+
+		for i, emp := range empStats {
+			rowNum := headerRow + 1 + i
+			f.SetCellValue(sheet, cellName(1, rowNum), emp.Name)
+			f.SetCellValue(sheet, cellName(2, rowNum), round(emp.TotalHours))
+
+			// Пример вывода по неделям (если заполняешь WeeklyHours):
+			//for week := 1; week <= 4; week++ {
+			//	f.SetCellValue(sheet, cellName(3+week, rowNum), round(emp.WeeklyHours[week]))
+			//}
+		}
+
+		// Авто-ширина для колонок статистики
+		f.SetColWidth(sheet, "A", "C", 20)
 	}
 
 	// Генерируем буфер
@@ -327,6 +361,94 @@ func (g *GenerateExcelService) getDoorStats(products []storage.PEOProduct) []Sta
 	result = append(result, coldDoor)
 	result = append(result, hotDoor)
 	result = append(result, unknown)
+
+	return result
+}
+
+// TODO добавить GetLoggiaStats
+func (g *GenerateExcelService) getLoggiaStats(products []storage.PEOProduct) []StatsRow {
+	var stv, stvTwo, stvThree, stvFour, stvFive, stvSix, stvAll, unknown StatsRow
+
+	stv.Label = "створка"
+	stvTwo.Label = "2ств.лр"
+	stvThree.Label = "3ств.лр"
+	stvFour.Label = "4ств.лр"
+	stvFive.Label = "5ств.лр"
+	stvSix.Label = "6ств.лр"
+	stvAll.Label = "всего лоджии"
+	unknown.Label = "разное"
+
+	for _, p := range products {
+		typeIzd := strings.ToLower(strings.TrimSpace(p.TypeIzd))
+
+		if p.Type == "loggia" {
+			addStats(&stvAll, p)
+			if typeIzd == "створка" {
+				addStats(&stv, p)
+			} else if typeIzd == "2ств.лр" {
+				addStats(&stvTwo, p)
+			} else if typeIzd == "3ств.лр" {
+				addStats(&stvThree, p)
+			} else if typeIzd == "4ств.лр" {
+				addStats(&stvFour, p)
+			} else if typeIzd == "5ств.лр" {
+				addStats(&stvFive, p)
+			} else if typeIzd == "6ств.лр" {
+				addStats(&stvSix, p)
+			} else {
+				addStats(&unknown, p)
+			}
+		}
+	}
+
+	var result []StatsRow
+
+	result = append(result, stv)
+	result = append(result, stvTwo)
+	result = append(result, stvThree)
+	result = append(result, stvFour)
+	result = append(result, stvFive)
+	result = append(result, stvSix)
+	result = append(result, stvAll)
+	result = append(result, unknown)
+
+	return result
+}
+
+// TODO по работникам статистика
+type EmpStats struct {
+	EmpID       int64
+	Name        string
+	TotalHours  float64
+	TotalMoney  float64
+	WeeklyHours map[int]float64
+}
+
+func (g *GenerateExcelService) getEmployeeStats(products []storage.PEOProduct, employees []storage.GetWorkers) []EmpStats {
+	stats := make(map[int64]*EmpStats)
+
+	for _, emp := range employees {
+		stats[emp.ID] = &EmpStats{
+			EmpID:       emp.ID,
+			Name:        emp.Name,
+			WeeklyHours: make(map[int]float64),
+		}
+	}
+
+	for _, p := range products {
+		for empID, value := range p.EmployeeValue {
+			if row, ok := stats[empID]; ok {
+				row.TotalHours += value
+			}
+		}
+	}
+
+	var result []EmpStats
+	for _, row := range stats {
+		if row.TotalHours > 0 {
+			result = append(result, *row)
+		}
+	}
 
 	return result
 }

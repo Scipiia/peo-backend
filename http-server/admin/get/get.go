@@ -12,13 +12,14 @@ import (
 type AdminCoefProvider interface {
 	GetAllCoefficientAdmin(ctx context.Context) ([]*storage.CoefficientPEOAdmin, error)
 	GetAllEmployeesAdmin(ctx context.Context) ([]*storage.EmployeesAdmin, error)
+	GetAllTeamsAdmin(ctx context.Context) ([]*storage.TeamAdmin, error)
 }
 
 func GetCoefficientAdmin(log *slog.Logger, coef AdminCoefProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.admin.GetCoefficientAdmin"
 
-		ctx, cancel := context.WithTimeout(r.Context(), 50*time.Millisecond)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		coef, err := coef.GetAllCoefficientAdmin(ctx)
@@ -38,17 +39,37 @@ func GetAllEmployeesAdmin(log *slog.Logger, emp AdminCoefProvider) http.HandlerF
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.admin.GetAllEmployeesAdmin"
 
-		ctx, cancel := context.WithTimeout(r.Context(), 50*time.Millisecond)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		employees, err := emp.GetAllEmployeesAdmin(ctx)
 		if err != nil {
-			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка получения всех коэффициентов для ПЭО")
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка получения всех сотрудников")
 			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}
 
 		render.JSON(w, r, employees)
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func GetAllTeams(log *slog.Logger, emp AdminCoefProvider) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.admin.GetAllTeams"
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		teams, err := emp.GetAllTeamsAdmin(ctx)
+		if err != nil {
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка получения всех бригад")
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
+		}
+
+		render.JSON(w, r, teams)
 
 		w.WriteHeader(http.StatusOK)
 	}

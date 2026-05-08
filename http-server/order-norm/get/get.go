@@ -15,7 +15,7 @@ import (
 
 type ResultGetNorm interface {
 	GetNormOrder(ctx context.Context, id int64) (*storage.GetOrderDetails, error)
-	GetNormOrdersByOrderNum(ctx context.Context, orderNum string) ([]*storage.GetOrderDetails, error)
+	GetNormOrdersByOrderNum(ctx context.Context, orderNum string, position int) ([]*storage.GetOrderDetails, error)
 	GetNormOrders(ctx context.Context, orderNum, orderType string) ([]storage.GetOrderDetails, error)
 	GetNormOrderIdSub(ctx context.Context, id int64) ([]*storage.GetOrderDetails, error)
 
@@ -23,6 +23,9 @@ type ResultGetNorm interface {
 	//GetFinalNormOrders(ctx context.Context) ([]storage.ReportFinalOrders, error)
 
 	GetPEOProductsByCategory(ctx context.Context, filter mysql.ProductFilter) ([]storage.PEOProduct, []storage.GetWorkers, error)
+
+	//TODO доп запрос за москитками
+	GetMosquitoOrderDetails(ctx context.Context, orderID int64) ([]*storage.GetOrderDetails, error)
 }
 
 func GetNormOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
@@ -62,7 +65,14 @@ func GetNormOrdersOrderNum(log *slog.Logger, result ResultGetNorm) http.HandlerF
 		const op = "handlers.order-norm.get.GetNormOrders"
 
 		orderNum := r.URL.Query().Get("order_num")
+		position := r.URL.Query().Get("position")
 		//orderNum := chi.URLParam(r, "order_num")
+
+		positionInt, err := strconv.Atoi(position)
+		if err != nil {
+			http.Error(w, "Invalid position", http.StatusBadRequest)
+			return
+		}
 
 		//log.With(
 		//	slog.String("op", op),
@@ -72,7 +82,7 @@ func GetNormOrdersOrderNum(log *slog.Logger, result ResultGetNorm) http.HandlerF
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		orders, err := result.GetNormOrdersByOrderNum(ctx, orderNum)
+		orders, err := result.GetNormOrdersByOrderNum(ctx, orderNum, positionInt)
 		if err != nil {
 			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("Ошибка при получении нормировок по номеру заказа")
 			http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
@@ -127,10 +137,22 @@ func DoubleReportOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc 
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		source := r.URL.Query().Get("source")
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		sub, err := result.GetNormOrderIdSub(ctx, id)
+		//var sub interface{}
+		var sub []*storage.GetOrderDetails
+
+		switch source {
+		case "mosquito":
+			log.Debug("loading mosquito order details", "id", id)
+			sub, err = result.GetMosquitoOrderDetails(ctx, id)
+		default:
+			log.Debug("loading internal order details", "id", id)
+			sub, err = result.GetNormOrderIdSub(ctx, id)
+		}
 		if err != nil {
 			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("Ошибка при получении заказов по номеру заказа")
 			http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)

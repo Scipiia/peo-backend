@@ -1,0 +1,272 @@
+[
+  {
+    "name": "nastr_for_napil",
+    "type": "number",
+    "count": 1,
+    "group": "ign",
+    "label": "Настройка станка для напиловки",
+    "value": 0.05,
+    "minutes": 3,
+    "required": true
+  },
+  {
+    "name": "napil_bez_impost",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Напиловка (без импоста)",
+    "value": 0.133,
+    "minutes": 8,
+    "required": true
+  },
+  {
+    "name": "dop_impost_napil",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Доп. импост (напиловка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "nastr_pbx",
+    "type": "number",
+    "count": 1,
+    "group": "ign",
+    "label": "Настройка станка РВХ",
+    "value": 0.133,
+    "minutes": 8,
+    "required": true
+  },
+  {
+    "name": "pzr",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "ПЗР",
+    "value": 0.083,
+    "minutes": 5,
+    "required": true
+  },
+  {
+    "name": "rabota_pbx",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Работа станка РВХ",
+    "value": 0.1,
+    "minutes": 6,
+    "required": true
+  },
+  {
+    "name": "frezer_nastr",
+    "type": "number",
+    "count": 1,
+    "group": "ign",
+    "label": "Фрезеровка (Настройка)",
+    "value": 0.05,
+    "minutes": 3,
+    "required": true
+  },
+  {
+    "name": "frezer_porog",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Фрезеровка (порогов)",
+    "value": 0.108,
+    "minutes": 6.5,
+    "required": true
+  },
+  {
+    "name": "promej_sbor",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Промежуточная сборка",
+    "value": 0.108,
+    "minutes": 6.5,
+    "required": true
+  },
+  {
+    "name": "dop_impost_frezer",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Доп. импост (Фрезеровка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "dop_impost_sverl",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Доп. импост (Сверловка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "dop_impost_yst",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Доп. импост (установка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "opres_nastr",
+    "type": "number",
+    "count": 0,
+    "group": "ign",
+    "label": "Опрессовка (настройка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "opres",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Опрессовка",
+    "value": 0.07,
+    "minutes": 4.2,
+    "required": true
+  },
+  {
+    "name": "podg_derj_shetki",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Подготовка держателя щетки",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "krepl_brys",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Крепление бруска",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "yst_porog_ypl_derj_shetk_shtift",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Установка порогов, уплотнителей, держателей щётки, штифтовка",
+    "value": 0.25,
+    "minutes": 15,
+    "required": true
+  },
+  {
+    "name": "sbor_petli",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Сборка петель",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "yst_dver_zamok_nakl_cilindr_stubl",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Установка дверных замков, крепление накладок цилиндра Stublina",
+    "value": 0.083,
+    "minutes": 5,
+    "required": true
+  },
+  {
+    "name": "navesh_stv_yst_otv_plank_reg_petli",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Навешивание створки, установка отв. Планок, регулировка петель",
+    "value": 0.033,
+    "minutes": 2,
+    "required": true
+  },
+  {
+    "name": "yst_zapoln",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Установка заполнения",
+    "value": 0.183,
+    "minutes": 11,
+    "required": true
+  },
+  {
+    "name": "dop_time_napil",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Доп время на напиловку",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "dop_time_sbor",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Доп время на сборку",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "yst_plast_fsb",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Установка пластин FSB",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "dop_frez_shtylp_mnogzaporn_zamok",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Доп фрез штульпа для многоз. Замка",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "frez_petli",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Фрез под рол петли",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "pereh_pdp",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Переходник ПДП 1001-00",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  }
+]
