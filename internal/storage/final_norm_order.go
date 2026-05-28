@@ -56,6 +56,7 @@ type PEOProduct struct {
 	Position        float64    `json:"position"`
 	ReadyDate       *time.Time `json:"ready_date"`
 	Coefficient     *float64   `json:"coefficient"`
+	Name            string     `json:"name"`
 
 	// Мапа: employee_id → суммарные минуты
 	EmployeeMinutes map[int64]float64 `json:"employee_minutes"`

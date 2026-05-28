@@ -52,9 +52,13 @@ type GetOrderDetails struct {
 	ParentProductID *int64          `json:"parent_product_id"`
 	Status          *string         `json:"status"`
 	TemplateCode    string          `json:"template_code"`
-	HeadName        string          `json:"head_name"`
+	HeadName        *string         `json:"head_name"`
 	TypeIzd         string          `json:"type_izd"`
 	ReadyDate       *string         `json:"ready_date"`
 	Position        int             `json:"position"`
+	Sqr             float64         `json:"sqr"`
+	Customer        *string         `json:"customer"`
+	Profile         string          `json:"profile"`
+	Systema         string          `json:"systema"`
 	//AssignWorkers   []AssignedWorkers `json:"assign_workers"`
 }

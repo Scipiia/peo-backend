@@ -191,26 +191,6 @@ func BuildContextGlyhar(materials []*storage.KlaesMaterials) Context {
 	return ctx
 }
 
-//type Element struct {
-//	Type  string
-//	Count float64
-//}
-//
-//func ExtractElementWindow(materials []*storage.KlaesMaterials) []Element {
-//	var elements []Element
-//
-//	for _, m := range materials {
-//		name := strings.TrimSpace(m.NameMat)
-//
-//		if constants.StvWindow[name] {
-//			elements = append(elements, Element{
-//				Type:  "sash",
-//				Count: m.Count,
-//			})
-//		}
-//	}
-//}
-
 func BuildContextWindow(materials []*storage.KlaesMaterials) Context {
 	ctx := Context{Type: "window"}
 

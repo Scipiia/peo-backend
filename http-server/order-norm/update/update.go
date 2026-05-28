@@ -36,7 +36,7 @@ func UpdateNormOrderOperation(log *slog.Logger, update ResultUpdateNorm) http.Ha
 			return
 		}
 
-		log.Info("Обновление нормировки", slog.Int64("id", id))
+		//log.Info("Обновление нормировки", slog.Int64("id", id))
 
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -48,7 +48,7 @@ func UpdateNormOrderOperation(log *slog.Logger, update ResultUpdateNorm) http.Ha
 			return
 		}
 
-		log.Info("Нормировка обновлена", slog.Int64("id", id))
+		//log.Info("Нормировка обновлена", slog.Int64("id", id))
 
 		render.JSON(w, r, map[string]interface{}{
 			"status":  strconv.Itoa(http.StatusOK),
@@ -75,7 +75,7 @@ func UpdateFinalOrder(log *slog.Logger, update ResultUpdateNorm) http.HandlerFun
 			return
 		}
 
-		log.Info("Обновление финальной нормировки", slog.Int64("id", id))
+		//log.Info("Обновление финальной нормировки", slog.Int64("id", id))
 
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()

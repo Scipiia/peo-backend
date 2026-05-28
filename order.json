@@ -1,11 +1,13 @@
 [
   {
     "mode": "multiplied",
-    "condition": {"HasImpost": true},
+    "condition": {
+      "HasImpost": true
+    },
     "operation": "impost_napil",
     "unitField": "HasImpostCount",
-    "value_per_unit": 0.025,
-    "minutes_per_unit": 1.5
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
   },
   {
     "mode": "multiplied",
@@ -17,7 +19,9 @@
   },
   {
     "mode": "multiplied",
-    "condition": {"HasImpost": true},
+    "condition": {
+      "HasImpost": true
+    },
     "operation": "impost_sverlo",
     "unitField": "HasImpostCount",
     "value_per_unit": 0.017,
@@ -25,15 +29,21 @@
   },
   {
     "mode": "multiplied",
-    "condition": {"HasImpost": true},
+    "condition": {
+      "HasImpost": true
+    },
     "operation": "impost_yst",
     "unitField": "HasImpostCount",
-    "value_per_unit": 0.050,
-    "minutes_per_unit": 3
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
   },
   {
     "mode": "multiplied",
-    "condition": {"StvTCount600": {"min": 1}},
+    "condition": {
+      "StvTCount600": {
+        "min": 1
+      }
+    },
     "operation": "dop_time_napil",
     "unitField": "StvTCount600",
     "value_per_unit": 0.017,
@@ -53,165 +63,120 @@
   },
   {
     "mode": "additivePlusMultiplied",
-    "condition": {},
-    "operation": "zashivka_stv",
+    "condition": {
+      "HasImpost": true
+    },
+    "operation": "yst_zapoln",
     "unitField": "HasImpostCount",
-    "value_per_unit": 0.200,
-    "minutes_per_unit": 12
-  }
-]
-
-
-
-[
-  {
-    "name": "podg_obor",
-    "type": "number",
-    "count": 1,
-    "group": "ign",
-    "label": "Подготовка оборудования",
-    "value": 0.05,
-    "minutes": 3,
-    "required": true
+    "value_per_unit": 0.15,
+    "minutes_per_unit": 9
   },
   {
-    "name": "napil_ram",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Напиловка рам",
-    "value": 0.067,
-    "minutes": 4,
-    "required": true
+    "mode": "additivePlusMultiplied",
+    "condition": {
+      "StvWindowCount": {
+        "min": 1
+      }
+    },
+    "operation": "napil_stv",
+    "unitField": "StvWindowCount",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
   },
   {
-    "name": "impost_napil",
-    "type": "number",
-    "count": 0,
-    "group": "imp",
-    "label": "Напиловка импоста",
-    "value": 0,
-    "minutes": 0,
-    "required": true
+    "mode": "multiplied",
+    "condition": {
+      "TagCountWin": {
+        "min": 1
+      }
+    },
+    "operation": "rybka_tag",
+    "unitField": "TagCountWin",
+    "value_per_unit": 0.008,
+    "minutes_per_unit": 0.5
   },
   {
-    "name": "obr_ram_pbx",
-    "type": "number",
-    "count": 1,
-    "group": "ign",
-    "label": "Настройка РВХ",
-    "value": 0.050,
-    "minutes": 3,
-    "required": true
+    "mode": "multiplied",
+    "condition": {
+      "TagCountWin": {
+        "min": 1
+      }
+    },
+    "operation": "podg_tag_yst_stv",
+    "unitField": "TagCountWin",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
   },
   {
-    "name": "obr_ram_pbx",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Обработка рамы (PBX)",
-    "value": 0.042,
-    "minutes": 2.5,
-    "required": true
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "yst_ypl_shtift",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
   },
   {
-    "name": "promej_sb_ram",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Промежуточная сборка рам",
-    "value": 0.1,
-    "minutes": 6,
-    "required": true
+    "mode": "additivePlusMultiplied",
+    "condition": {},
+    "operation": "yst_ypl_shtift",
+    "unitField": "HasImpostCount",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
   },
   {
-    "name": "imp_frezer",
-    "type": "number",
-    "count": 0,
-    "group": "imp",
-    "label": "Импост (Фрезеровка)",
-    "value": 0,
-    "minutes": 0,
-    "required": true
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "meh_obr_rychka",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.017,
+    "minutes_per_unit": 1
   },
   {
-    "name": "impost_sverlo",
-    "type": "number",
-    "count": 0,
-    "group": "imp",
-    "label": "Импост (Сверловка)",
-    "value": 0,
-    "minutes": 0,
-    "required": true
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "sles_obr_yst_furn",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.033,
+    "minutes_per_unit": 2
   },
   {
-    "name": "impost_yst",
-    "type": "number",
-    "count": 0,
-    "group": "imp",
-    "label": "Импост (Установка)",
-    "value": 0,
-    "minutes": 0,
-    "required": true
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "promej_sb_stv",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.150,
+    "minutes_per_unit": 9
   },
   {
-    "name": "opres_nastr",
-    "type": "number",
-    "count": 0,
-    "group": "ign",
-    "label": "Опрессовка (настройка)",
-    "value": 0,
-    "minutes": 0,
-    "required": true
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "sbor_rychek",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.025,
+    "minutes_per_unit": 1.5
   },
   {
-    "name": "opres",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Опрессовка",
-    "value": 0.047,
-    "minutes": 2.8,
-    "required": true
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "sbor_petli",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.025,
+    "minutes_per_unit": 1.5
   },
   {
-    "name": "yst_ypl_ugl_shtift",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Установка уплотнителей, очистка углов, штифтовка",
-    "value": 0.183,
-    "minutes": 11,
-    "required": true
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "yst_furn",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.100,
+    "minutes_per_unit": 6
   },
   {
-    "name": "zashivka_stv",
-    "type": "number",
-    "count": 1,
-    "group": "",
-    "label": "Зашивка (ств)",
-    "value": 0.2,
-    "minutes": 12,
-    "required": true
-  },
-  {
-    "name": "dop_time_napil",
-    "type": "number",
-    "count": 0,
-    "group": "",
-    "label": "Доп время на напиловку",
-    "value": 0,
-    "minutes": 0,
-    "required": true
-  },
-  {
-    "name": "dop_time_sbor",
-    "type": "number",
-    "count": 0,
-    "group": "",
-    "label": "Доп время на сборку",
-    "value": 0,
-    "minutes": 0,
-    "required": true
+    "mode": "multiplied",
+    "condition": {},
+    "operation": "navesh_ram",
+    "unitField": "StvCountForOpres",
+    "value_per_unit": 0.150,
+    "minutes_per_unit": 9
   }
 ]

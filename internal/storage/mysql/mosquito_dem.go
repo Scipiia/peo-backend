@@ -2,81 +2,355 @@ package mysql
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"time"
+	"github.com/go-sql-driver/mysql"
+	"log/slog"
+	"math"
 	"vue-golang/internal/storage"
 )
 
-func (s *Storage) MoscuiteDem(ctx context.Context, since time.Time) ([]storage.MosquitoOrderDTO, error) {
-	const op = "storage.MoscuiteDem.sql"
+func (s *Storage) GetMosquitoOrderDetails(ctx context.Context, requestedID int64) (*storage.GetOrderDetails, error) {
+	const op = "storage.mysql.GetMosquitoOrderDetails"
 
-	stmt1 := `SELECT o.idorders, o.numorders, o.class_id, FROM_UNIXTIME(o.date) AS order_date FROM dem_orders o WHERE o.ms = '1' AND o.date >= ? ORDER BY o.date ASC;`
+	stmt := `SELECT id, order_num, name, count, total_time, created_at, type, part_type, parent_product_id, parent_assembly, status, position, ready_date
+		FROM dem_product_instances_al 
+		WHERE id = ? AND type = 'mosquito' AND part_type = 'main'`
 
-	rows, err := s.db.QueryContext(ctx, stmt1, since.Unix())
-	if err != nil {
-		return nil, fmt.Errorf("ошибка получения всех москиток из dem_orders: %w", err)
-	}
-	defer rows.Close()
+	var item storage.GetOrderDetails
+	err := s.db.QueryRowContext(ctx, stmt, requestedID).Scan(&item.ID, &item.OrderNum, &item.Name, &item.Count, &item.TotalTime, &item.CreatedAT, &item.Type, &item.PartType,
+		&item.ParentProductID, &item.ParentAssembly, &item.Status, &item.Position, &item.ReadyDate)
 
-	var orders []storage.MosquitoOrderDTO
-
-	for rows.Next() {
-		var o storage.MosquitoOrderDTO
-
-		err := rows.Scan(&o.OrderID, &o.OrderNum, &o.ClassID, &o.OrderDate)
+	if err == nil {
+		// ✅ Нашли по newID — подгружаем операции и возвращаем
+		ops, err := s.loadOperationsForProduct(ctx, item.ID)
 		if err != nil {
-			return nil, fmt.Errorf("ошибка сканирования строк для получения маскиток : %w", err)
+			slog.Warn("failed to load operations", "op", op, "product_id", item.ID, "err", err)
+			// Не падаем, возвращаем заказ без операций — фронт покажет пустой список
+		} else {
+			item.Operations = ops
 		}
-
-		orders = append(orders, o)
+		return &item, nil
+	}
+	if err != sql.ErrNoRows {
+		return nil, fmt.Errorf("%s: ошибка поиска по newID: %w", op, err)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("ошибка итерации строк для получения маскиток: %w", err)
+	// 🔹 ШАГ 2: Не нашли по newID → считаем, что requestedID — это legacy idorders
+	var orderNum string
+	err = s.db.QueryRowContext(ctx, `SELECT numorders FROM dem_orders WHERE idorders = ? AND class_id = 4`, requestedID).Scan(&orderNum)
+	if err != nil {
+		return nil, fmt.Errorf("%s: не удалось получить номер заказа из архива (legacy_id=%d): %w", op, requestedID, err)
 	}
 
-	return orders, nil
+	// 🔹 ШАГ 3: Пробуем найти в новой базе по order_num (уже импортирован?)
+	err = s.db.QueryRowContext(ctx, `
+		SELECT id, order_num, name, count, total_time, created_at, type, 
+		       part_type, parent_product_id, parent_assembly, status, position
+		FROM dem_product_instances_al 
+		WHERE order_num = ? AND type = 'mosquito' AND part_type = 'main' 
+		ORDER BY id DESC LIMIT 1
+	`, orderNum).Scan(
+		&item.ID, &item.OrderNum, &item.Name, &item.Count, &item.TotalTime,
+		&item.CreatedAT, &item.Type, &item.PartType, &item.ParentProductID,
+		&item.ParentAssembly, &item.Status, &item.Position,
+	)
+
+	if err == nil {
+		ops, err := s.loadOperationsForProduct(ctx, item.ID)
+		if err != nil {
+			slog.Warn("failed to load operations", "op", op, "product_id", item.ID, "err", err)
+		} else {
+			item.Operations = ops
+		}
+		return &item, nil
+	}
+	if err != sql.ErrNoRows {
+		return nil, fmt.Errorf("%s: ошибка поиска по order_num: %w", op, err)
+	}
+
+	// 🔹 ШАГ 4: Импорт из легаси
+	newItem, err := s.importMosquitoFromLegacy(ctx, requestedID, orderNum)
+	if err != nil {
+		return nil, fmt.Errorf("%s: импорт не удался: %w", op, err)
+	}
+
+	// 🔹 После импорта сразу подгружаем операции (они только что вставлены)
+	ops, err := s.loadOperationsForProduct(ctx, newItem.ID)
+	if err != nil {
+		slog.Warn("failed to load operations after import", "op", op, "product_id", newItem.ID, "err", err)
+	} else {
+		newItem.Operations = ops
+	}
+
+	slog.Info("mosquito order imported", "op", op, "legacy_id", requestedID, "new_id", newItem.ID, "order_num", newItem.OrderNum, "ops_count", len(newItem.Operations))
+
+	return newItem, nil
 }
 
-func (s *Storage) UpsertMoskitOrder(ctx context.Context, order storage.MosquitoOrderDTO, externalID string) (int64, error) {
-	const op = "storage.UpsertMoskitOrder"
+func (s *Storage) importMosquitoFromLegacy(ctx context.Context, legacyID int64, orderNum string) (*storage.GetOrderDetails, error) {
+	const op = "storage.mysql.importMosquitoFromLegacy"
 
-	stmt := `
-		INSERT INTO dem_product_instances_al (
-			id_dem_orders, order_num, external_id, source_system,
-			type, status, template_code, part_type, total_time,
-			created_at, updated_at
-		) VALUES (
-			?, ?, ?, 'moskit_crm', 'moskit', 'in_production', 
-			'moskit_default', 'main', 0, NOW(), NOW()
-		)
-		ON DUPLICATE KEY UPDATE
-			id_dem_orders = VALUES(id_dem_orders),
-			order_num = VALUES(order_num),
-			status = VALUES(status),
-			type = VALUES(type),
-			updated_at = NOW()
-	`
+	// 🔹 1. Читаем шапку из dem_orders
+	stmtOrder := `SELECT idorders, numorders, ordername, 'Москитная сетка', 'mosquito' as type, 'main' as part_type, 'in_production' as status, '' as template_code
+				FROM dem_orders
+				WHERE idorders = ? AND class_id = '4'`
 
-	result, err := s.db.ExecContext(ctx, stmt,
-		order.OrderID, order.OrderNum, externalID,
-	)
+	var detail storage.GetOrderDetails
+
+	err := s.db.QueryRowContext(ctx, stmtOrder, legacyID).Scan(&detail.ID, &detail.OrderNum, &detail.Customer, &detail.Name, &detail.Type, &detail.PartType,
+		&detail.Status, &detail.TemplateCode)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("%s: mosquito order %d not found", op, legacyID)
+	}
 	if err != nil {
-		return 0, fmt.Errorf("%s: ошибка upsert москитки: %w", op, err)
+		return nil, fmt.Errorf("%s: query order: %w", op, err)
 	}
 
-	// Получаем ID записи (работает и для INSERT, и для UPDATE в MySQL)
-	instanceID, _ := result.LastInsertId()
-	if instanceID == 0 {
-		// Если был UPDATE, LastInsertId() может вернуть 0 → делаем SELECT
-		err = s.db.QueryRowContext(ctx,
-			"SELECT id FROM dem_product_instances_al WHERE external_id = ? AND source_system = ?",
-			externalID, "moskit_crm",
-		).Scan(&instanceID)
-		if err != nil {
-			return 0, fmt.Errorf("%s: failed to get instance id: %w", op, err)
+	stmtParamMs := `SELECT SUM(kol_vo) as kol_vo,SUM(kol_vo * weight * hight) sqr FROM dem_param_moskit WHERE orderid = ?`
+
+	var count, sqr float64
+	err = s.db.QueryRowContext(ctx, stmtParamMs, legacyID).Scan(&count, &sqr)
+	if err != nil {
+		// Если таблица пуста или ошибка, не ломаем весь процесс, просто логируем
+		slog.Warn("failed to get mosquito params", "op", op, "err", err)
+		count = 0
+		sqr = 0
+	}
+
+	val := sqr / 1000000.0
+	allSqr := math.Round(val*1000) / 1000
+	detail.Count = count
+	detail.Sqr = allSqr
+
+	stmtTypeMs := `SELECT vid, SUM(kol_vo) FROM dem_param_moskit WHERE orderid = ? GROUP BY vid`
+	typeCounts := map[string]int{"vsn": 0, "ms": 0}
+	tRows, err := s.db.QueryContext(ctx, stmtTypeMs, legacyID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: query type ms: %w", op, err)
+	}
+
+	defer tRows.Close()
+	for tRows.Next() {
+		var vid, cnt int
+		if err := tRows.Scan(&vid, &cnt); err == nil {
+			// ⚠️ Проверьте в старой БД, какие vid соответствуют VSN. Обычно это 6 и 7.
+			if vid == 5 || vid == 6 {
+				typeCounts["vsn"] += cnt
+			} else {
+				typeCounts["ms"] += cnt
+			}
 		}
 	}
 
-	return instanceID, nil
+	vsn := typeCounts["vsn"]
+	reg := typeCounts["ms"]
+	var typeIzd string
+	switch {
+	case vsn > 0 && reg > 0:
+		typeIzd = fmt.Sprintf("%dvsn+%dms", vsn, reg)
+	case vsn > 0:
+		typeIzd = fmt.Sprintf("vsn")
+	default:
+		typeIzd = fmt.Sprintf("ms")
+	}
+
+	detail.Operations = make([]storage.NormOperation, 0)
+
+	stmtOps := `
+    SELECT 
+        d.name_mat,
+        SUM(d.allowances) as total_value,
+        SUM(d.kol_vo) as total_count
+    FROM dem_orderdetails d
+    WHERE d.orderid = ? 
+      AND d.type_m_id = 30
+    GROUP BY d.articul_mat, d.name_mat, d.messure
+    ORDER BY FIELD(d.name_mat, 
+        'Напиловка',
+        'Сборка, опрессовка',
+        'Сборка',
+        'Скатка',
+        'Установка крепежа',
+        'Изготовление',
+        'Установка защиты (вилатерм)'
+    ), d.name_mat ASC`
+
+	opsRows, err := s.db.QueryContext(ctx, stmtOps, legacyID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: query operations: %w", op, err)
+	}
+	defer opsRows.Close()
+
+	for opsRows.Next() {
+		var oper storage.NormOperation
+		var rawHours float64
+		var name string
+
+		// ⚠️ Порядок Scan должен точно совпадать с порядком SELECT выше!
+		err := opsRows.Scan(
+			&name,       // name_mat → operation_label
+			&rawHours,   // SUM(value) → value (суммарные часы)
+			&oper.Count, // SUM(kol_vo) → count (общее количество)
+		)
+		if err != nil {
+			return nil, fmt.Errorf("%s: scan operation: %w", op, err)
+		}
+
+		oper.Label = name
+		oper.Name = name
+		oper.Value = rawHours
+		oper.Minutes = rawHours * 60.0
+
+		detail.Operations = append(detail.Operations, oper)
+	}
+
+	var totalTime float64
+	for _, oper := range detail.Operations {
+		totalTime += oper.Value
+	}
+	detail.TotalTime = math.Round(totalTime*1000) / 1000
+
+	status := "in_production"
+	newItem := &storage.GetOrderDetails{
+		OrderNum:     detail.OrderNum,
+		TemplateCode: detail.TemplateCode,
+		Name:         detail.Name,
+		Customer:     detail.Customer,
+		Count:        detail.Count,
+		Sqr:          detail.Sqr,
+		TotalTime:    detail.TotalTime,
+		Type:         "mosquito",
+		PartType:     "main",
+		Status:       &status,
+		Position:     0,
+		TypeIzd:      typeIzd,
+		Profile:      "",
+		Systema:      "",
+	}
+
+	//fmt.Println("STATUSSSSSSS", newItem)
+
+	// 🔹 4. Транзакция: вставка шапки + операций
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("%s: транзакция: %w", op, err)
+	}
+	defer tx.Rollback()
+
+	// 4.1 Вставляем шапку заказа
+	res, err := tx.ExecContext(ctx, `
+        INSERT INTO dem_product_instances_al (
+            order_num, template_code, name, customer, count, total_time, 
+            type, part_type, parent_assembly, status, position, sqr, type_izd, profile, systema
+        ) VALUES (?, '0', ?, ?, ?, ?, ?, ?, '', ?, ?, ?, ?, '', '')
+    `,
+		newItem.OrderNum, newItem.Name, newItem.Customer, newItem.Count, newItem.TotalTime,
+		newItem.Type, newItem.PartType, newItem.Status, newItem.Position, newItem.Sqr, newItem.TypeIzd,
+	)
+
+	if err != nil {
+		// Обработка дубля (если успели импортировать параллельно)
+		if mysqlErr, ok := err.(*mysql.MySQLError); ok && mysqlErr.Number == 1062 {
+			// Рекурсивно читаем то, что вставил конкурент
+			return s.GetMosquitoOrderDetails(ctx, legacyID)
+		}
+		return nil, fmt.Errorf("%s: вставка шапки: %w", op, err)
+	}
+
+	newID, _ := res.LastInsertId()
+	newItem.ID = newID
+
+	for i, dop := range detail.Operations {
+		_, err = tx.ExecContext(ctx, `
+            INSERT INTO dem_operation_values_al (
+                product_id, operation_name, operation_label, count, value, minutes, sort_operation
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, newID, dop.Name, dop.Name, dop.Count, dop.Value, dop.Minutes, i)
+
+		if err != nil {
+			return nil, fmt.Errorf("%s: вставка операции '%s': %w", op, dop.Name, err)
+		}
+	}
+
+	// 🔹 5. Коммит транзакции
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("%s: коммит: %w", op, err)
+	}
+
+	return newItem, nil
+}
+
+func (s *Storage) loadOperationsForProduct(ctx context.Context, productID int64) ([]storage.NormOperation, error) {
+	const op = "storage.mysql.loadOperationsForProduct"
+
+	// Добавил id и sort_operation в выборку, чтобы быть уверенным в порядке и уникальности
+	stmtOps := `SELECT id, operation_name, operation_label, count, value, minutes, sort_operation 
+                FROM dem_operation_values_al 
+                WHERE product_id = ? 
+                ORDER BY sort_operation ASC, id ASC`
+
+	rowsOps, err := s.db.QueryContext(ctx, stmtOps, productID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: query operations: %w", op, err)
+	}
+	defer rowsOps.Close() // Закрываем основной результат в конце
+
+	var ops []storage.NormOperation
+
+	// Подготовка запроса для исполнителей (можно вынести в переменную уровня Storage, но пока оставим так)
+	stmtExecOper := `SELECT employee_id, actual_minutes, actual_value 
+                     FROM dem_operation_executors_al 
+                     WHERE product_id = ? AND operation_name = ?`
+
+	for rowsOps.Next() {
+		var oper storage.NormOperation
+		var opID int64
+		var sortOp int
+
+		// Сканируем все поля, включая ID и сортировку
+		err := rowsOps.Scan(&opID, &oper.Name, &oper.Label, &oper.Count, &oper.Value, &oper.Minutes, &sortOp)
+		if err != nil {
+			return nil, fmt.Errorf("%s: scan operation: %w", op, err)
+		}
+
+		// Сохраняем ID операции, если он есть в структуре NormOperation,
+		// или используем Name для связи (как у вас сейчас)
+
+		// --- Загрузка исполнителей для текущей операции ---
+		execRows, err := s.db.QueryContext(ctx, stmtExecOper, productID, oper.Name)
+		if err != nil {
+			slog.Warn("failed to query executors", "op", op, "err", err)
+			// Не прерываем весь процесс из-за одной операции без исполнителей
+			oper.AssignedWorkers = []storage.AssignedWorker{}
+			ops = append(ops, oper)
+			continue
+		}
+
+		var workers []storage.AssignedWorker
+		for execRows.Next() {
+			var ex storage.AssignedWorker
+			if err := execRows.Scan(&ex.EmployeeID, &ex.ActualMinutes, &ex.ActualValue); err != nil {
+				slog.Warn("failed to scan executor", "op", op, "err", err)
+				continue
+			}
+			workers = append(workers, ex)
+		}
+
+		// ВАЖНО: Закрываем execRows сразу здесь, а не через defer!
+		execRows.Close()
+
+		if err = execRows.Err(); err != nil {
+			slog.Warn("error iterating executors", "op", op, "err", err)
+		}
+
+		oper.AssignedWorkers = workers
+		ops = append(ops, oper)
+	}
+
+	if err = rowsOps.Err(); err != nil {
+		return nil, fmt.Errorf("%s: iteration error: %w", op, err)
+	}
+
+	return ops, nil
 }

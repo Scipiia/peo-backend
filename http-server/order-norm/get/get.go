@@ -24,8 +24,11 @@ type ResultGetNorm interface {
 
 	GetPEOProductsByCategory(ctx context.Context, filter mysql.ProductFilter) ([]storage.PEOProduct, []storage.GetWorkers, error)
 
-	//TODO доп запрос за москитками
-	GetMosquitoOrderDetails(ctx context.Context, orderID int64) ([]*storage.GetOrderDetails, error)
+	// TODO доп запрос за москитками
+	GetMosquitoOrderDetails(ctx context.Context, requestedID int64) (*storage.GetOrderDetails, error)
+	GetGutterOrderDetails(ctx context.Context, requestedID int64) (*storage.GetOrderDetails, error)
+
+	GetNashchelnikRawData(ctx context.Context, legacyID int64) (*storage.NashchelnikRawData, error)
 }
 
 func GetNormOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
@@ -107,7 +110,7 @@ func GetNormOrders(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
 		//	slog.String("order_type_filter", orderType),
 		//).Info("Запрос на получение заказов")
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 
 		// Передаём фильтр (может быть пустым)
@@ -148,7 +151,29 @@ func DoubleReportOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc 
 		switch source {
 		case "mosquito":
 			log.Debug("loading mosquito order details", "id", id)
-			sub, err = result.GetMosquitoOrderDetails(ctx, id)
+			item, err := result.GetMosquitoOrderDetails(ctx, id)
+			if err != nil {
+				log.With(slog.String("op", op), slog.String("error", err.Error())).Error("Ошибка при получении заказов по номеру заказа")
+				http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+				return
+			}
+			render.JSON(w, r, []*storage.GetOrderDetails{item})
+			return
+		case "vodootliv":
+			log.Debug("loading mosquito order details", "id", id)
+			item, err := result.GetGutterOrderDetails(ctx, id)
+			if err != nil {
+				if strings.Contains(err.Error(), "REQUIRES_CALCULATOR") {
+					// Отдаем 400 или 409 с понятным сообщением
+					http.Error(w, "REQUIRES_CALCULATOR", http.StatusConflict)
+					return
+				}
+				log.Error("daychlen", err)
+				http.Error(w, "Internal Error", http.StatusInternalServerError)
+				return
+			}
+			render.JSON(w, r, []*storage.GetOrderDetails{item})
+			return
 		default:
 			log.Debug("loading internal order details", "id", id)
 			sub, err = result.GetNormOrderIdSub(ctx, id)
@@ -250,5 +275,33 @@ func FinalReportNormOrders(log *slog.Logger, result ResultGetNorm) http.HandlerF
 		}
 
 		render.JSON(w, r, response)
+	}
+}
+
+func GetNashchelnikRawHandler(log *slog.Logger, storage ResultGetNorm) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.get.GetNashchelnikRawHandler"
+
+		// Парсим ID из URL
+		idStr := chi.URLParam(r, "id")
+		legacyID, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+		defer cancel()
+
+		// Вызываем метод хранилища
+		data, err := storage.GetNashchelnikRawData(ctx, legacyID)
+		if err != nil {
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("Failed to get raw nashchelnik data")
+			http.Error(w, "Not found", http.StatusNotFound)
+			return
+		}
+
+		// Отдаем JSON
+		render.JSON(w, r, data)
 	}
 }

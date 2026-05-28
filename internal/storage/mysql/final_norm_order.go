@@ -245,7 +245,7 @@ func (s *Storage) fetchProducts(ctx context.Context, f ProductFilter) (map[int64
 			COALESCE(c.short_name_customer, p.customer_type) AS customer_type,
 			p.systema, p.type_izd, p.profile, p.count, p.sqr, p.brigade, 
 			p.norm_money, p.position, p.ready_date,
-			COALESCE(p.coefficient, dc.coefficient) AS coefficient
+			COALESCE(p.coefficient, dc.coefficient) AS coefficient, p.name
 		FROM dem_product_instances_al p
 		LEFT JOIN dem_customer_al c ON p.customer = c.name
 		LEFT JOIN dem_coefficient_al dc ON dc.type = p.type
@@ -272,7 +272,7 @@ func (s *Storage) fetchProducts(ctx context.Context, f ProductFilter) (map[int64
 			&p.PartType, &p.Type, &parentID, &p.ParentAssembly,
 			&p.CustomerType, &p.Systema, &p.TypeIzd, &p.Profile,
 			&p.Count, &p.Sqr, &p.Brigade, &p.NormMoney, &p.Position,
-			&readyDate, &coef,
+			&readyDate, &coef, &p.Name,
 		)
 		if err != nil {
 			return nil, nil, err

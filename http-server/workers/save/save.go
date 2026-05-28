@@ -55,7 +55,7 @@ func SaveWorkersOperation(log *slog.Logger, result ResultWorkers) http.HandlerFu
 		//	slog.Any("sample", req.Assignments[0]),
 		//)
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 
 		err := result.SaveOperationWorkers(ctx, req)

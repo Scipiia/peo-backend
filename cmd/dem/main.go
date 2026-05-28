@@ -44,7 +44,7 @@ func main() {
 
 	recalculateService := recalculate.NewNormService(storage)
 	generateExcelService := generate_excel.NewGenerateService(storage)
-	mosquitoService := get_norm_mosquito.NewMosquitoService(storage)
+	//mosquitoService := get_norm_mosquito.NewMosquitoService(storage)
 
 	log.Info("server started", slog.String("address", cfg.Address))
 
@@ -55,7 +55,7 @@ func main() {
 		Service: Service{
 			RecalculateService:   recalculateService,
 			GenerateExcelService: generateExcelService,
-			MosquitoService:      mosquitoService,
+			//MosquitoService:      mosquitoService,
 		},
 	}
 

@@ -51,9 +51,9 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			"Изготовитель", "Н/руб", "защ. Пленки", "пленка н/р"}
 	} else if reportType == "loggia" {
 		baseHeaders = []string{"Витраж", "№ Заказа", "Корп/дил", "Заказчик", "Наименование", "Кол-во", "Площадь", "Площадь створки", "Н/час", "Изготовитель", "Н/час", "Н/руб", "Разница"}
-	} //else {
-	//baseHeaders = []string{"ID", "Заказ", "Клиент", "Тип", "Дата", "Сумма"}
-	//}
+	} else if reportType == "mosquito" {
+		baseHeaders = []string{"№ Заказа", "№ Партии", "Заказчик", "Наименование", "Кол-во", "Площадь", "Н/час", "Изготовитель", "Тип клиента", "Вид изделия", "Н/час", "Н/руб", "VSN"}
+	}
 
 	// 2. Пишем базовую шапку
 	for i, name := range baseHeaders {
@@ -108,6 +108,20 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			f.SetCellValue(sheet, cellName(9, rowNum), round(p.TotalTime))
 			f.SetCellValue(sheet, cellName(10, rowNum), p.Brigade)
 			f.SetCellValue(sheet, cellName(11, rowNum), round(p.NormMoney))
+		} else if reportType == "mosquito" {
+			f.SetCellValue(sheet, cellName(1, rowNum), p.OrderNum)
+			f.SetCellValue(sheet, cellName(2, rowNum), "")
+			f.SetCellValue(sheet, cellName(3, rowNum), p.Customer)
+			f.SetCellValue(sheet, cellName(4, rowNum), p.Name)
+			f.SetCellValue(sheet, cellName(5, rowNum), p.Count)
+			f.SetCellValue(sheet, cellName(6, rowNum), p.Sqr)
+			f.SetCellValue(sheet, cellName(7, rowNum), round(p.TotalTime))
+			f.SetCellValue(sheet, cellName(8, rowNum), "")
+			f.SetCellValue(sheet, cellName(9, rowNum), p.CustomerType)
+			f.SetCellValue(sheet, cellName(10, rowNum), p.TypeIzd)
+			f.SetCellValue(sheet, cellName(11, rowNum), round(p.TotalTime))
+			f.SetCellValue(sheet, cellName(12, rowNum), round(p.NormMoney))
+			f.SetCellValue(sheet, cellName(13, rowNum), "")
 		}
 
 		// 4. Сотрудники (всегда СРАБОТАЕТ ПРАВИЛЬНО благодаря empColMap)
@@ -137,6 +151,7 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	winStats := g.getWindowStats(products)
 	doorStats := g.getDoorStats(products)
 	loggiaStats := g.getLoggiaStats(products)
+	mosquitoStats := g.getMosquitoStats(products)
 
 	var allStats []StatsRow
 
@@ -145,6 +160,8 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 		allStats = append(allStats, doorStats...)
 	} else if reportType == "loggia" {
 		allStats = append(allStats, loggiaStats...)
+	} else if reportType == "mosquito" {
+		allStats = append(allStats, mosquitoStats...)
 	}
 
 	startRowStats := len(products) + 10
@@ -241,6 +258,8 @@ func getReportType(types []string) string {
 			return "window"
 		case "loggia", "vitrage":
 			return "loggia"
+		case "mosquito":
+			return "mosquito"
 		}
 	}
 	return "window"
@@ -410,6 +429,42 @@ func (g *GenerateExcelService) getLoggiaStats(products []storage.PEOProduct) []S
 	result = append(result, stvFive)
 	result = append(result, stvSix)
 	result = append(result, stvAll)
+	result = append(result, unknown)
+
+	return result
+}
+
+func (g *GenerateExcelService) getMosquitoStats(products []storage.PEOProduct) []StatsRow {
+	var vsn, ms, combined, totalMs, unknown StatsRow
+
+	vsn.Label = "VSN"
+	ms.Label = "Обычная"
+	combined.Label = "Смешанные заказы(vsn+ms)"
+	totalMs.Label = "Всего москиток"
+	unknown.Label = "Неизвестные изделия"
+
+	for _, p := range products {
+		typeIzd := strings.ToLower(strings.TrimSpace(p.TypeIzd))
+
+		if p.Type == "mosquito" {
+			addStats(&totalMs, p)
+			if typeIzd == "vsn" {
+				addStats(&vsn, p)
+			} else if typeIzd == "ms" {
+				addStats(&ms, p)
+			} else if strings.Contains(typeIzd, "+") {
+				addStats(&combined, p)
+			} else {
+				addStats(&unknown, p)
+			}
+		}
+	}
+	var result []StatsRow
+
+	result = append(result, vsn)
+	result = append(result, ms)
+	result = append(result, combined)
+	result = append(result, totalMs)
 	result = append(result, unknown)
 
 	return result

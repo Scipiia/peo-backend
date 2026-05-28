@@ -12,7 +12,6 @@ import (
 	upadmincoef "vue-golang/http-server/admin/update"
 	generate_excel "vue-golang/http-server/generate-report/generate-excel"
 	getmaterials "vue-golang/http-server/materials/get"
-	"vue-golang/http-server/mosquito/post"
 	getorder "vue-golang/http-server/order-dem/get"
 	"vue-golang/http-server/order-norm/get"
 	"vue-golang/http-server/order-norm/save"
@@ -101,7 +100,10 @@ func routes(app *App) *chi.Mux {
 	router.Get("/api/report/excel", generate_excel.GenerateReportExcel(app.Log, app.Service.GenerateExcelService))
 
 	//TODO вытягивание москиток
-	router.Post("/api/sync/aa", post.SyncButton(app.Log, app.Service.MosquitoService))
+	//router.Post("/api/sync/aa", post.SyncButton(app.Log, app.Service.MosquitoService))
+	//TODO сохранение и расчет водоотливов
+	router.Post("/api/orders/nashchelnik/calc", save.SaveNashchelnikCalc(app.Log, app.Storage))
+	router.Get("/api/orders/nashchelnik/raw/{id}", get.GetNashchelnikRawHandler(app.Log, app.Storage))
 
 	//TODO adminPanel
 	adminRouter := chi.NewRouter()
