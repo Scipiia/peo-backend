@@ -3,7 +3,6 @@ package save
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
@@ -15,7 +14,7 @@ import (
 type ResultNorm interface {
 	SaveNormOrder(ctx context.Context, result storage.OrderNormDetails) (int64, error)
 	SaveNormOperation(ctx context.Context, OrderID int64, operations []storage.NormOperation) error
-	SaveNashchelnikNorm(ctx context.Context, legacyID int64, orderNum string, a, b, c, d, sqr, count float64) (*storage.GetOrderDetails, error)
+	SaveNashchelnikNorm(ctx context.Context, legacyID int64, orderNum string, a, b, c, d, sqr, count float64, opsFromFront []storage.NormOperation) (*storage.GetOrderDetails, error)
 }
 
 type Response struct {
@@ -65,34 +64,36 @@ func SaveNormOrderOperation(log *slog.Logger, res ResultNorm) http.HandlerFunc {
 	}
 }
 
-func SaveNashchelnikCalc(log *slog.Logger, storage ResultNorm) http.HandlerFunc {
+func SaveNashchelnikCalc(log *slog.Logger, res ResultNorm) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.post.SaveNashchelnikCalc"
 
 		// 1. Парсим входные данные
 		var req struct {
-			LegacyID int64   `json:"legacy_id"` // ID из старой базы (dem_orders.idorders)
-			OrderNum string  `json:"order_num"` // Номер заказа (для связи)
-			A        float64 `json:"a"`
-			B        float64 `json:"b"`
-			C        float64 `json:"c"`
-			D        float64 `json:"d"`
-			Count    float64 `json:"count"`
-			Sqr      float64 `json:"sqr"`
+			LegacyID   int64                   `json:"legacy_id"` // ID из старой базы (dem_orders.idorders)
+			OrderNum   string                  `json:"order_num"` // Номер заказа (для связи)
+			A          float64                 `json:"a"`
+			B          float64                 `json:"b"`
+			C          float64                 `json:"c"`
+			D          float64                 `json:"d"`
+			Count      float64                 `json:"count"`
+			Sqr        float64                 `json:"sqr"`
+			Operations []storage.NormOperation `json:"operations"`
 		}
-
-		fmt.Println(req)
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
 
+		log.Info("OOOOOOOOOOOOOOOOOO", req.Operations)
+		log.Info("OOOOOOOOOOOOOOOOOONUM", req.OrderNum)
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		// 2. Вызываем функцию сохранения и расчета
-		item, err := storage.SaveNashchelnikNorm(ctx, req.LegacyID, req.OrderNum, req.A, req.B, req.C, req.D, req.Sqr, req.Count)
+		item, err := res.SaveNashchelnikNorm(ctx, req.LegacyID, req.OrderNum, req.A, req.B, req.C, req.D, req.Sqr, req.Count, req.Operations)
 		if err != nil {
 			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("Ошибка при сохранении нащельника")
 

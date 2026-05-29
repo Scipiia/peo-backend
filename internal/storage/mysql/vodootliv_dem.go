@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
 	"log/slog"
@@ -314,8 +315,102 @@ func (s *Storage) importGutterFromLegacy(ctx context.Context, legacyID int64, or
 	return newItem, nil
 }
 
+//func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, orderNum string, a, b, c, d, sqr, count float64, opsFromFront []storage.NormOperation) (*storage.GetOrderDetails, error) {
+//	const op = "storage.mysql.SaveNashchelnikNorm"
+//
+//	// 0. Данные заказчика
+//	var customerName string
+//	s.db.QueryRowContext(ctx, `SELECT ordername FROM dem_orders WHERE idorders = ?`, legacyID).Scan(&customerName)
+//
+//	// 1. Считаем общее время из присланных операций
+//	var totalTime float64
+//	for _, opItem := range opsFromFront {
+//		totalTime += opItem.Value
+//	}
+//	totalTime = math.Round(totalTime*1000) / 1000
+//
+//	// 2. Сохраняем параметры A,B,C,D для будущего редактирования
+//	paramsMap := map[string]float64{"a": a, "b": b, "c": c, "d": d}
+//	paramsJSON, _ := json.Marshal(paramsMap)
+//	paramsStr := string(paramsJSON)
+//
+//	// 3. Транзакция
+//	tx, err := s.db.BeginTx(ctx, nil)
+//	if err != nil {
+//		return nil, err
+//	}
+//	defer tx.Rollback()
+//
+//	// Ищем существующий заказ
+//	var existingID int64
+//	err = tx.QueryRowContext(ctx, `SELECT id FROM dem_product_instances_al WHERE order_num = ? AND type = 'vodootliv' LIMIT 1`, orderNum).Scan(&existingID)
+//
+//	status := "in_production"
+//	var newItem storage.GetOrderDetails
+//
+//	if existingID > 0 {
+//		// Обновление
+//		_, err = tx.ExecContext(ctx,
+//			`UPDATE dem_product_instances_al SET total_time = ?, customer = ?, count = ?, sqr = ?, systema = ? WHERE id = ?`,
+//			totalTime, customerName, count, sqr, paramsStr, existingID)
+//		if err != nil {
+//			return nil, fmt.Errorf("%s: update failed: %w", op, err)
+//		}
+//
+//		// 🔥 ВАЖНО: Всегда удаляем старые операции перед вставкой новых
+//		_, err = tx.ExecContext(ctx, `DELETE FROM dem_operation_values_al WHERE product_id = ?`, existingID)
+//		if err != nil {
+//			return nil, err
+//		}
+//		newItem.ID = existingID
+//
+//	} else {
+//		// Создание нового
+//		res, err := tx.ExecContext(ctx, `
+//			INSERT INTO dem_product_instances_al (
+//				order_num, template_code, name, customer, count, total_time,
+//				type, part_type, parent_assembly, status, position, sqr, type_izd, systema, profile
+//			) VALUES (?, '0', 'Водоотлив', ?, ?, ?, 'vodootliv', 'main', '', ?, 0, ?, 'vo', ?, '')
+//		`, orderNum, customerName, count, totalTime, &status, sqr, paramsStr)
+//
+//		if err != nil {
+//			return nil, fmt.Errorf("%s: insert failed: %w", op, err)
+//		}
+//		id, _ := res.LastInsertId()
+//		newItem.ID = id
+//	}
+//
+//	// 4. Вставляем операции, пришедшие с фронта
+//	for i, dop := range opsFromFront {
+//		_, err = tx.ExecContext(ctx, `
+//			INSERT INTO dem_operation_values_al (product_id, operation_name, operation_label, count, value, minutes, sort_operation)
+//			VALUES (?, ?, ?, ?, ?, ?, ?)
+//		`, newItem.ID, dop.Name, dop.Label, dop.Count, dop.Value, dop.Minutes, i)
+//
+//		if err != nil {
+//			// Если ошибка дубля, значит фронт прислал повторяющиеся operation_name
+//			return nil, fmt.Errorf("%s: insert op '%s' failed (check duplicates): %w", op, dop.Label, err)
+//		}
+//	}
+//
+//	if err = tx.Commit(); err != nil {
+//		return nil, err
+//	}
+//
+//	// Ответ
+//	newItem.OrderNum = orderNum
+//	newItem.TotalTime = totalTime
+//	newItem.Operations = opsFromFront
+//	newItem.Type = "vodootliv"
+//	newItem.Count = count
+//	newItem.Sqr = sqr
+//	newItem.Systema = paramsStr
+//
+//	return &newItem, nil
+//}
+
 // TODO нащельники
-func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, orderNum string, a, b, c, d, sqr, count float64) (*storage.GetOrderDetails, error) {
+func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, orderNum string, a, b, c, d, sqr, count float64, operations []storage.NormOperation) (*storage.GetOrderDetails, error) {
 	const op = "storage.mysql.SaveNashchelnikNorm"
 
 	// 0. ПОЛУЧАЕМ ДАННЫЕ ЗАКАЗА (Заказчик и т.д.)
@@ -325,96 +420,43 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 		customerName = "" // Если не нашли, пусть будет пусто
 	}
 
-	// 1. РАСЧЕТ ВРЕМЕНИ ПО ФОРМУЛАМ ИЗ ТЗ
-	timeGib := (a * (38.25 / 3600.0)) + (b * (42.5 / 3600.0))
-	timeEdge := (c * ((38.25 * 1.5) / 3600.0)) + (d * ((42.5 * 1.5) / 3600.0))
-
-	// 2. БАЗОВЫЕ ОПЕРАЦИИ (ИСКЛЮЧАЯ ГИБ И ОТБОРТОВКУ, ТАК КАК МЫ ИХ СЧИТАЕМ ЗАНОВО)
-	var baseOps []storage.NormOperation
-	stmtBaseOps := `
-		SELECT d.name_mat, SUM(d.allowances) as hours, SUM(d.kol_vo) as count
-		FROM dem_orderdetails d
-		LEFT JOIN dem_type_works t ON d.type_m_id = t.type_m_id
-		WHERE d.orderid = ? 
-		  AND t.type_code LIKE 'trud'
-		  AND d.name_mat NOT IN ('Гиб', 'Отбортовка')
-		GROUP BY d.name_mat
-	`
-	rows, err := s.db.QueryContext(ctx, stmtBaseOps, legacyID)
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var name string
-			var hours, count float64
-			if err := rows.Scan(&name, &hours, &count); err == nil {
-				baseOps = append(baseOps, storage.NormOperation{
-					Name:    strings.ToLower(strings.ReplaceAll(name, " ", "_")),
-					Label:   name,
-					Value:   math.Round(hours*1000) / 1000,
-					Minutes: math.Round((hours*60)*1000) / 1000,
-					Count:   count,
-				})
-			}
-		}
-	}
-
-	// 3. ФОРМИРУЕМ СПИСОК ВСЕХ ОПЕРАЦИЙ
-	var allOps []storage.NormOperation
-	allOps = append(allOps, baseOps...)
-
-	// Добавляем рассчитанный Гиб
-	if timeGib > 0 || (a+b+c+d) > 0 {
-		allOps = append(allOps, storage.NormOperation{
-			Name:    "gib_nashchelnika",
-			Label:   "Гиб",
-			Count:   a + b + c + d,
-			Value:   math.Round(timeGib*1000) / 1000,
-			Minutes: math.Round((timeGib*60)*1000) / 1000,
-		})
-	}
-
-	// Добавляем рассчитанную Отбортовку
-	if timeEdge > 0 || (c+d) > 0 {
-		allOps = append(allOps, storage.NormOperation{
-			Name:    "otbortovka_nashchelnika",
-			Label:   "Отбортовка",
-			Count:   c + d,
-			Value:   math.Round(timeEdge*1000) / 1000,
-			Minutes: math.Round((timeEdge*60)*1000) / 1000,
-		})
-	}
+	paramsMap := map[string]float64{"a": a, "b": b, "c": c, "d": d}
+	paramsJSON, _ := json.Marshal(paramsMap)
+	paramsStr := string(paramsJSON)
 
 	// Считаем общее время
 	var totalTime float64
-	for _, op := range allOps {
-		totalTime += op.Value
+	for _, opr := range operations {
+		totalTime += opr.Value
 	}
 	totalTime = math.Round(totalTime*1000) / 1000
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("Ошибка транзакции %s, %w", op, err)
+	}
+	defer tx.Rollback()
+
 	// 4. СОЗДАЕМ ИЛИ ОБНОВЛЯЕМ ИНСТАНС ЗАКАЗА
 	var existingID int64
-	err = s.db.QueryRowContext(ctx, `
-		SELECT id FROM dem_product_instances_al 
-		WHERE order_num = ? AND type = 'vodootliv' LIMIT 1
-	`, orderNum).Scan(&existingID)
+	//err = s.db.QueryRowContext(ctx, `
+	//	SELECT id FROM dem_product_instances_al
+	//	WHERE order_num = ? AND type = 'vodootliv' LIMIT 1
+	//`, orderNum).Scan(&existingID)
+	err = tx.QueryRowContext(ctx, `SELECT id FROM dem_product_instances_al WHERE order_num = ? AND type = 'vodootliv' LIMIT 1 FOR UPDATE`, orderNum).Scan(&existingID)
 
 	status := "in_production"
 	var newItem storage.GetOrderDetails
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
 	if existingID > 0 {
 		// Обновляем существующий
 		_, err = tx.ExecContext(ctx,
-			`UPDATE dem_product_instances_al SET total_time = ?, customer = ?, count = ?, sqr = ? WHERE id = ?`,
+			`UPDATE dem_product_instances_al SET total_time = ?, customer = ?, count = ?, sqr = ?, systema = ? WHERE id = ?`,
 			totalTime,
 			customerName,
 			count,
 			sqr,
+			paramsStr,
 			existingID,
 		)
 		if err != nil {
@@ -424,7 +466,7 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 		// Удаляем старые операции, чтобы не было дублей
 		_, err = tx.ExecContext(ctx, `DELETE FROM dem_operation_values_al WHERE product_id = ?`, existingID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%s: удаление не удалось: %w", op, err)
 		}
 
 		newItem.ID = existingID
@@ -432,11 +474,11 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 		// Создаем новый
 		res, err := tx.ExecContext(ctx, `
 			INSERT INTO dem_product_instances_al (
-				order_num, template_code, name, customer, count, total_time, 
+				order_num, template_code, name, customer, count, total_time,
 				type, part_type, parent_assembly, status, position, sqr, type_izd, systema, profile
 			) VALUES (
-				?, '0', 'Водоотлив', ?, ?, ?, 
-				'vodootliv', 'main', '', ?, 0, ?, 'vo', '', ''
+				?, '0', 'Водоотлив', ?, ?, ?,
+				'vodootliv', 'main', '', ?, 0, ?, 'vo', ?, ''
 			)
 		`,
 			orderNum,
@@ -445,6 +487,7 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 			totalTime,
 			&status,
 			sqr,
+			paramsStr,
 		)
 
 		if err != nil {
@@ -454,14 +497,18 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 		newItem.ID = id
 	}
 
+	fmt.Println("IDDDDDDDD", newItem.ID)
+
 	// Вставляем новые операции
-	for i, dop := range allOps {
+	for i, dop := range operations {
+		fmt.Println(dop.Name, dop.Label, dop.Value)
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO dem_operation_values_al (product_id, operation_name, operation_label, count, value, minutes, sort_operation)
 			VALUES (?, ?, ?, ?, ?, ?, ?)
 		`, newItem.ID, dop.Name, dop.Label, dop.Count, dop.Value, dop.Minutes, i)
 		if err != nil {
-			return nil, err
+			// Если ошибка дубля, значит фронт прислал повторяющиеся operation_name для одного продукта
+			return nil, fmt.Errorf("%s: duplicate op '%s' for product %d: %w", op, dop.Label, newItem.ID, err)
 		}
 	}
 
@@ -472,7 +519,7 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 	// Заполняем ответ для фронта
 	newItem.OrderNum = orderNum
 	newItem.TotalTime = totalTime
-	newItem.Operations = allOps
+	newItem.Operations = operations
 	newItem.Type = "vodootliv"
 	newItem.Count = count
 	newItem.Sqr = sqr
