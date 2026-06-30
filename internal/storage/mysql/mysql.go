@@ -13,7 +13,7 @@ type Storage struct {
 
 func New(cfg config.Config) (*Storage, error) {
 	const op = "storage.mysql.New"
-	////
+	//
 	//dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%v",
 	//	cfg.DBUser,
 	//	cfg.DBPassword,

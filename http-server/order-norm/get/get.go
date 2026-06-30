@@ -29,6 +29,8 @@ type ResultGetNorm interface {
 	GetGutterOrderDetails(ctx context.Context, requestedID int64) (*storage.GetOrderDetails, error)
 
 	GetNashchelnikRawData(ctx context.Context, legacyID int64) (*storage.NashchelnikRawData, error)
+
+	GetNormOrderVitrage(ctx context.Context, id int64) ([]storage.GetWorkersVitrage, error)
 }
 
 func GetNormOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
@@ -257,7 +259,7 @@ func FinalReportNormOrders(log *slog.Logger, result ResultGetNorm) http.HandlerF
 			Type:     typeIzd,
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 		defer cancel()
 
 		// Запрашиваем данные
@@ -301,7 +303,31 @@ func GetNashchelnikRawHandler(log *slog.Logger, storage ResultGetNorm) http.Hand
 			return
 		}
 
-		// Отдаем JSON
 		render.JSON(w, r, data)
+	}
+}
+
+func GetVitrageAssignments(log *slog.Logger, storage ResultGetNorm) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.get.GetVitrageAssignments"
+
+		idStr := chi.URLParam(r, "id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			http.Error(w, "неверный id заказа", http.StatusBadRequest)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+		defer cancel()
+
+		vitrage, err := storage.GetNormOrderVitrage(ctx, id)
+		if err != nil {
+			log.Error("ошибка получения назначений", slog.String("op", op), slog.Any("error", err))
+			http.Error(w, "ошибка получения назначений", http.StatusInternalServerError)
+			return
+		}
+
+		render.JSON(w, r, vitrage)
 	}
 }

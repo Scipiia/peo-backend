@@ -105,6 +105,8 @@ func routes(app *App) *chi.Mux {
 	router.Post("/api/orders/nashchelnik/calc", save.SaveNashchelnikCalc(app.Log, app.Storage))
 	router.Get("/api/orders/nashchelnik/raw/{id}", get.GetNashchelnikRawHandler(app.Log, app.Storage))
 
+	router.Get("/api/orders/{id}/vitr-assign", get.GetVitrageAssignments(app.Log, app.Storage))
+
 	//TODO adminPanel
 	adminRouter := chi.NewRouter()
 	adminRouter.Use(auth.BasicAuth(app.Config.AdminLogin, app.Config.AdminPass))

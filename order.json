@@ -1,182 +1,222 @@
 [
   {
-    "mode": "multiplied",
-    "condition": {
-      "HasImpost": true
-    },
-    "operation": "impost_napil",
-    "unitField": "HasImpostCount",
-    "value_per_unit": 0.017,
-    "minutes_per_unit": 1
+    "name": "nastr_for_napil",
+    "type": "number",
+    "count": 1,
+    "group": "ign",
+    "label": "Настройка станка для напиловки",
+    "value": 0.083,
+    "minutes": 5,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {"HasImpost": true},
-    "operation": "imp_frezer",
-    "unitField": "HasImpostCount",
-    "value_per_unit": 0.033,
-    "minutes_per_unit": 2
+    "name": "napil_bez_impost",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Напиловка (без импоста)",
+    "value": 0.125,
+    "minutes": 7.5,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {
-      "HasImpost": true
-    },
-    "operation": "impost_sverlo",
-    "unitField": "HasImpostCount",
-    "value_per_unit": 0.017,
-    "minutes_per_unit": 1
+    "name": "dop_impost_napil",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Доп. импост (напиловка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {
-      "HasImpost": true
-    },
-    "operation": "impost_yst",
-    "unitField": "HasImpostCount",
-    "value_per_unit": 0.033,
-    "minutes_per_unit": 2
+    "name": "obr_zamok_rychka_otv",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Обработка (замок; ручка; ответка;)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {
-      "StvTCount600": {
-        "min": 1
-      }
-    },
-    "operation": "dop_time_napil",
-    "unitField": "StvTCount600",
-    "value_per_unit": 0.017,
-    "minutes_per_unit": 1
+    "name": "yst_pod_petli",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Установка пластин под петли",
+    "value": 0.115,
+    "minutes": 7,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {
-      "StvTCount400": {
-        "min": 1
-      }
-    },
-    "operation": "dop_time_sbor",
-    "unitField": "StvTCount400",
-    "value_per_unit": 0.067,
-    "minutes_per_unit": 4
+    "name": "yst_fetr",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Установка фетра",
+    "value": 0.25,
+    "minutes": 15,
+    "required": true
   },
   {
-    "mode": "additivePlusMultiplied",
-    "condition": {
-      "HasImpost": true
-    },
-    "operation": "yst_zapoln",
-    "unitField": "HasImpostCount",
-    "value_per_unit": 0.15,
-    "minutes_per_unit": 9
+    "name": "sbor_opres_frezer_sverl",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Сборка под опресовку, фрезеровка, сверловка",
+    "value": 0.1,
+    "minutes": 6,
+    "required": true
   },
   {
-    "mode": "additivePlusMultiplied",
-    "condition": {
-      "StvWindowCount": {
-        "min": 1
-      }
-    },
-    "operation": "napil_stv",
-    "unitField": "StvWindowCount",
-    "value_per_unit": 0.017,
-    "minutes_per_unit": 1
+    "name": "dop_impost_frezer",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Доп. импост (Фрезеровка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {
-      "TagCountWin": {
-        "min": 1
-      }
-    },
-    "operation": "rybka_tag",
-    "unitField": "TagCountWin",
-    "value_per_unit": 0.008,
-    "minutes_per_unit": 0.5
+    "name": "dop_impost_sverl",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Доп. импост (Сверловка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {
-      "TagCountWin": {
-        "min": 1
-      }
-    },
-    "operation": "podg_tag_yst_stv",
-    "unitField": "TagCountWin",
-    "value_per_unit": 0.017,
-    "minutes_per_unit": 1
+    "name": "dop_impost_yst",
+    "type": "number",
+    "count": 0,
+    "group": "imp",
+    "label": "Доп. импост (установка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
   },
   {
-    "mode": "additivePlusMultiplied",
-    "condition": {},
-    "operation": "yst_ypl_shtift",
-    "unitField": "StvCountForOpres",
-    "value_per_unit": 0.067,
-    "minutes_per_unit": 4
+    "name": "opres_nastr",
+    "type": "number",
+    "count": 0,
+    "group": "ign",
+    "label": "Опрессовка (настройка)",
+    "value": 0,
+    "minutes": 0,
+    "required": true
   },
   {
-    "mode": "additivePlusMultiplied",
-    "condition": {},
-    "operation": "yst_ypl_shtift",
-    "unitField": "HasImpostCount",
-    "value_per_unit": 0.033,
-    "minutes_per_unit": 2
+    "name": "opres",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Опрессовка",
+    "value": 0.07,
+    "minutes": 14,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {},
-    "operation": "meh_obr_rychka",
-    "unitField": "StvCountForOpres",
-    "value_per_unit": 0.017,
-    "minutes_per_unit": 1
+    "name": "obrezinivanie",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Обрезинивание",
+    "value": 0.167,
+    "minutes": 10,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {},
-    "operation": "sles_obr_yst_furn",
-    "unitField": "StvCountForOpres",
-    "value_per_unit": 0.033,
-    "minutes_per_unit": 2
+    "name": "yst_zamok",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Установка замка",
+    "value": 0,
+    "minutes": 0,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {},
-    "operation": "promej_sb_stv",
-    "unitField": "StvCountForOpres",
-    "value_per_unit": 0.150,
-    "minutes_per_unit": 9
+    "name": "yst_petli_stv",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Установка петель на створки",
+    "value": 0.375,
+    "minutes": 23,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {},
-    "operation": "sbor_rychek",
-    "unitField": "StvCountForOpres",
-    "value_per_unit": 0.025,
-    "minutes_per_unit": 1.5
+    "name": "frezer_shping",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Фрезеровка под шпингалет",
+    "value": 0,
+    "minutes": 0,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {},
-    "operation": "sbor_petli",
-    "unitField": "StvCountForOpres",
-    "value_per_unit": 0.025,
-    "minutes_per_unit": 1.5
+    "name": "navesh",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Навешивание",
+    "value": 0.5,
+    "minutes": 30,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {},
-    "operation": "yst_furn",
-    "unitField": "StvCountForOpres",
-    "value_per_unit": 0.100,
-    "minutes_per_unit": 6
+    "name": "yst_shping",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Установка шпингалета",
+    "value": 0.25,
+    "minutes": 15,
+    "required": true
   },
   {
-    "mode": "multiplied",
-    "condition": {},
-    "operation": "navesh_ram",
-    "unitField": "StvCountForOpres",
-    "value_per_unit": 0.150,
-    "minutes_per_unit": 9
+    "name": "zashivka",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Зашивка",
+    "value": 0.377,
+    "minutes": 23,
+    "required": true
+  },
+  {
+    "name": "krepl_fiks_bryska",
+    "type": "number",
+    "count": 1,
+    "group": "",
+    "label": "Закрепление фиксирующего бруска",
+    "value": 0.13,
+    "minutes": 8,
+    "required": true
+  },
+  {
+    "name": "dop_time_napil",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Доп время на напиловку",
+    "value": 0,
+    "minutes": 0,
+    "required": true
+  },
+  {
+    "name": "dop_time_sbor",
+    "type": "number",
+    "count": 0,
+    "group": "",
+    "label": "Доп время на сборку",
+    "value": 0,
+    "minutes": 0,
+    "required": true
   }
 ]

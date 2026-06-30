@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"golang.org/x/sync/errgroup"
-	"log"
 	"math"
 	"strings"
 	"vue-golang/internal/constants"
@@ -186,7 +185,7 @@ func BuildContextGlyhar(materials []*storage.KlaesMaterials) Context {
 
 	//ctx.CounterCount = ctx.ImpostCount * float64(itemCount)
 
-	log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f, StvCount600=%f, StvCount400=%f", ctx.HasImpost, ctx.ImpostCount, ctx.StvTCount600, ctx.StvTCount400)
+	//log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f, StvCount600=%f, StvCount400=%f", ctx.HasImpost, ctx.ImpostCount, ctx.StvTCount600, ctx.StvTCount400)
 
 	return ctx
 }
@@ -222,7 +221,7 @@ func BuildContextWindow(materials []*storage.KlaesMaterials) Context {
 
 	ctx.StvCountForOpres = ctx.StvWindowCount / 4.0
 
-	log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f, StvCount=%f, TagCount=%f, StvCountAll=%f", ctx.HasImpost, ctx.ImpostCount, ctx.StvWindowCount, ctx.TagCountWin, ctx.StvCountForOpres)
+	//log.Printf("Смотрим материалы: HasImpost=%v, ImpostCount=%f, StvCount=%f, TagCount=%f, StvCountAll=%f", ctx.HasImpost, ctx.ImpostCount, ctx.StvWindowCount, ctx.TagCountWin, ctx.StvCountForOpres)
 
 	return ctx
 }
@@ -351,13 +350,13 @@ func BuildContextLoggia(materials []*storage.KlaesMaterials, dopInfo []*storage.
 			strings.Contains(name, "Поворот 90гр") {
 			ctx.LogSoedPrice += d.Count
 
-			log.Printf("[Loggia] Добавлено соединителей из dem_price: %.0f", d.Count)
+			//log.Printf("[Loggia] Добавлено соединителей из dem_price: %.0f", d.Count)
 		}
 
 		if strings.Contains(name, "Притвор") {
 			ctx.LogPritvorPrice += d.Count
 
-			log.Printf("[Loggia] Добавлено притворов из dem_price: %.0f", d.Count)
+			//log.Printf("[Loggia] Добавлено притворов из dem_price: %.0f", d.Count)
 		}
 	}
 
@@ -367,7 +366,7 @@ func BuildContextLoggia(materials []*storage.KlaesMaterials, dopInfo []*storage.
 
 	ctx.LogKomplVst = math.Ceil(ctx.LogKomplVst)
 
-	log.Printf("Смотрим материалы: logRamCount=%v, logStvCount=%v, logSoed=%v, logPritvor=%f, komplCount=%f", ctx.LogRamCount, ctx.LogStvCount, ctx.LogSoedPrice, ctx.LogPritvorPrice, ctx.LogKomplVst)
+	//log.Printf("Смотрим материалы: logRamCount=%v, logStvCount=%v, logSoed=%v, logPritvor=%f, komplCount=%f", ctx.LogRamCount, ctx.LogStvCount, ctx.LogSoedPrice, ctx.LogPritvorPrice, ctx.LogKomplVst)
 
 	return ctx
 }
@@ -382,6 +381,8 @@ func BuildContext(materials []*storage.KlaesMaterials, dopInfo []*storage.DopInf
 		return BuildContextDoor(materials, dopInfo), nil
 	case "loggia":
 		return BuildContextLoggia(materials, dopInfo), nil
+	case "vitrage":
+		return Context{}, nil
 	default:
 		return Context{}, fmt.Errorf("неизвестный тип изделия: %s", typeIzd)
 	}

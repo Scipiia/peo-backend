@@ -167,7 +167,7 @@ func (s *Storage) GetAllTemplatesAdmin(ctx context.Context) ([]*storage.Template
 func (s *Storage) UpdateTemplateAdmin(ctx context.Context, id int, update storage.TemplateAdmin) error {
 	const op = "storage.mysql.TemplateAdmin"
 
-	stmt := `UPDATE dem_templates_al SET code=?, category=?, is_active=?, name=?, profile=?, systema=?, izd=?, operations=?, head_name=? WHERE code=?`
+	stmt := `UPDATE dem_templates_al SET code=?, category=?, is_active=?, name=?, profile=?, systema=?, izd=?, operations=?, head_name=? WHERE id=?`
 
 	_, err := s.db.ExecContext(ctx, stmt, update.Code, update.Category, update.IsActive, update.Name, update.Profile,
 		update.Systema, update.TypeIzd, update.Operation, update.HeadName, id)

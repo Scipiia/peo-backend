@@ -64,10 +64,10 @@ func (s *Storage) UpdateFinalOrder(ctx context.Context, ID int64, update storage
 	const op = "storage.mysql.UpdateFinalOrder"
 
 	stmt := `UPDATE dem_product_instances_al SET customer_type = ?, norm_money = ?, profile = ?, sqr = ?, systema = ?, 
-            parent_assembly = ?, brigade = ?, type_izd = ?, status = 'final', coefficient = ? WHERE id = ?`
+            parent_assembly = ?, brigade = ?, type_izd = ?, status = 'final', coefficient = ?, sqr_stv = ? WHERE id = ?`
 
 	_, err := s.db.ExecContext(ctx, stmt, update.CustomerType, update.NormMoney, update.Profile, update.Sqr, update.Systema, update.ParentAssembly,
-		update.Brigade, update.TypeIzd, update.Coefficient, ID)
+		update.Brigade, update.TypeIzd, update.Coefficient, update.SqrStv, ID)
 	if err != nil {
 		return fmt.Errorf("%s: ошибка обновления  %w", op, err)
 	}

@@ -86,9 +86,6 @@ func SaveNashchelnikCalc(log *slog.Logger, res ResultNorm) http.HandlerFunc {
 			return
 		}
 
-		log.Info("OOOOOOOOOOOOOOOOOO", req.Operations)
-		log.Info("OOOOOOOOOOOOOOOOOONUM", req.OrderNum)
-
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
