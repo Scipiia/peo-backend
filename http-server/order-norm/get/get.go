@@ -2,8 +2,6 @@ package get
 
 import (
 	"context"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -11,6 +9,9 @@ import (
 	"time"
 	"vue-golang/internal/storage"
 	"vue-golang/internal/storage/mysql"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
 type ResultGetNorm interface {
@@ -170,7 +171,7 @@ func DoubleReportOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc 
 					http.Error(w, "REQUIRES_CALCULATOR", http.StatusConflict)
 					return
 				}
-				log.Error("daychlen", err)
+				log.Error("daychlen", slog.String("op", op), slog.String("error", err.Error()))
 				http.Error(w, "Internal Error", http.StatusInternalServerError)
 				return
 			}

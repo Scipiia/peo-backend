@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
 	"time"
 	"vue-golang/internal/storage"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 type MockNormStorage struct {
@@ -110,7 +111,7 @@ func TestCalculateNorm_AdditivePlusMultiplied(t *testing.T) {
 	service := NewNormService(mockStorage)
 
 	// 6. Выполняем расчёт
-	operations, ctx, err := service.CalculateNorm(context.Background(), "ORD-123", 1, "door", "56", 2)
+	operations, ctx, err := service.CalculateNorm(context.Background(), "ORD-123", 1, "door", "56", 2, false)
 
 	// 7. Проверяем результат
 	assert.NoError(t, err)
@@ -168,7 +169,7 @@ func TestCalculateNorm_Multiplied(t *testing.T) {
 
 	service := NewNormService(mockStorage)
 
-	operation, ctx, err := service.CalculateNorm(context.Background(), "ORD-123", 1, "door", "56", 1)
+	operation, ctx, err := service.CalculateNorm(context.Background(), "ORD-123", 1, "door", "56", 1, false)
 
 	assert.NoError(t, err)
 	assert.True(t, ctx.HasImpost)
@@ -202,7 +203,7 @@ func TestCalculateNorm_MaterialsError(t *testing.T) {
 		Return((*storage.Template)(nil), nil)
 
 	service := NewNormService(mockStorage)
-	_, _, err := service.CalculateNorm(context.Background(), "ORD-123", 1, "door", "TEST", 1)
+	_, _, err := service.CalculateNorm(context.Background(), "ORD-123", 1, "door", "TEST", 1, false)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "materials:") // в твоём текущем коде префикс "materials:"
@@ -238,7 +239,7 @@ func TestCalculateNorm_ParallelCalls(t *testing.T) {
 	}).Return([]*storage.DopInfoDemPrice{}, nil)
 
 	service := NewNormService(mockStorage)
-	_, _, err := service.CalculateNorm(context.Background(), "ORD-123", 1, "door", "TEST", 1)
+	_, _, err := service.CalculateNorm(context.Background(), "ORD-123", 1, "door", "TEST", 1, false)
 
 	assert.NoError(t, err)
 
@@ -1052,23 +1053,23 @@ func TestBuildContext(t *testing.T) {
 		newMaterial("Импост", 1.0, 500.0),
 	}
 
-	ctx, err := BuildContext(materials, nil, "door")
+	ctx, err := BuildContext(materials, nil, "door", 1)
 	assert.NoError(t, err)
 	assert.Equal(t, "door", ctx.Type)
 	assert.True(t, ctx.HasImpost)
 
-	ctx, err = BuildContext(materials, nil, "window")
+	ctx, err = BuildContext(materials, nil, "window", 1)
 	assert.NoError(t, err)
 	assert.Equal(t, "window", ctx.Type)
 	assert.True(t, ctx.HasImpost)
 
-	ctx, err = BuildContext(materials, nil, "glyhar")
+	ctx, err = BuildContext(materials, nil, "glyhar", 1)
 	assert.NoError(t, err)
 	assert.Equal(t, "glyhar", ctx.Type)
 	assert.True(t, ctx.HasImpost)
 
 	// Тест для неизвестного типа
-	_, err = BuildContext(materials, nil, "unknown")
+	_, err = BuildContext(materials, nil, "unknown", 1)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "неизвестный тип изделия")
 }

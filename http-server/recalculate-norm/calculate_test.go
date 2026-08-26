@@ -2,9 +2,6 @@ package recalculate_norm
 
 import (
 	"context"
-	"github.com/go-chi/render"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -12,14 +9,21 @@ import (
 	"testing"
 	"vue-golang/internal/service/recalculate"
 	"vue-golang/internal/storage"
+
+	"github.com/go-chi/render"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 type MockNormCalculation struct {
 	mock.Mock
 }
 
-func (m *MockNormCalculation) CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, recalculate.Context, error) {
-	args := m.Called(ctx, orderNum, pos, typeIzd, templateCode, itemCount)
+//func (m *MockNormCalculation) CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int, permisDopMaterial bool) ([]storage.Operation, recalculate.Context, error) {
+//args := m.Called(ctx, orderNum, pos, typeIzd, templateCode, itemCount, permisDopMaterial)
+
+func (m *MockNormCalculation) CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int, permisDopMaterial bool) ([]storage.Operation, recalculate.Context, error) {
+	args := m.Called(ctx, orderNum, pos, typeIzd, templateCode, itemCount, permisDopMaterial)
 
 	ops := []storage.Operation{}
 	if args.Get(0) != nil {
@@ -56,6 +60,7 @@ func TestCalculateNormOperations_Success(t *testing.T) {
 		"door",        // typeIzd
 		"56",          // templateCode
 		2,             // itemCount
+		true,          // permisDopMaterial (door => true)
 	).Return(operations, ctxData, nil)
 
 	// 3. Создаём фейковый логгер
@@ -133,7 +138,7 @@ func TestCalculateNormOperations_ServiceError(t *testing.T) {
 
 	// Настраиваем мок на возврат ошибки
 	mockCalc.On("CalculateNorm",
-		mock.Anything, "ORD-123", 1, "door", "TEST", 1,
+		mock.Anything, "ORD-123", 1, "door", "TEST", 1, true,
 	).Return([]storage.Operation{}, recalculate.Context{}, assert.AnError)
 
 	logger := slog.Default()
@@ -163,7 +168,7 @@ func TestCalculateNormOperations_ContextCanceled(t *testing.T) {
 	mockCalc := new(MockNormCalculation)
 
 	// Мок "ждёт", пока контекст не будет отменён
-	mockCalc.On("CalculateNorm", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	mockCalc.On("CalculateNorm", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			ctx := args.Get(0).(context.Context)
 			<-ctx.Done() // ждём отмены контекста

@@ -4,14 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/go-chi/render"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/go-chi/render"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"vue-golang/internal/storage"
 )
@@ -83,7 +84,7 @@ func TestGetTemplatesByCode_Success(t *testing.T) {
 		Return(template, nil)
 
 	logger := slog.Default()
-	handler := GetTemplatesByCode(logger, mockStorage)
+	handler := GetTemplatesByCode(logger, nil)
 
 	// Создаём запрос с query параметром ?code=DOOR-56
 	req := httptest.NewRequest(http.MethodGet, "/api/templates?code=56", nil)
@@ -114,7 +115,7 @@ func TestGetTemplatesByCode_Success(t *testing.T) {
 func TestGetTemplatesByCode_MissingCode(t *testing.T) {
 	mockStorage := new(MockTemplateJSON)
 	logger := slog.Default()
-	handler := GetTemplatesByCode(logger, mockStorage)
+	handler := GetTemplatesByCode(logger, nil)
 
 	// Запрос БЕЗ параметра code
 	req := httptest.NewRequest(http.MethodGet, "/api/templates", nil)
@@ -139,7 +140,7 @@ func TestGetTemplatesByCode_NotFound(t *testing.T) {
 		Return(nil, sql.ErrNoRows)
 
 	logger := slog.Default()
-	handler := GetTemplatesByCode(logger, mockStorage)
+	handler := GetTemplatesByCode(logger, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/templates?code=UNKNOWN", nil)
 	rr := httptest.NewRecorder()
@@ -162,7 +163,7 @@ func TestGetTemplatesByCode_DBError(t *testing.T) {
 		Return(nil, errors.New("connection timeout"))
 
 	logger := slog.Default()
-	handler := GetTemplatesByCode(logger, mockStorage)
+	handler := GetTemplatesByCode(logger, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/templates?code=56", nil)
 	rr := httptest.NewRecorder()
@@ -189,7 +190,7 @@ func TestGetAllTemplates_Success(t *testing.T) {
 		Return(templates, nil)
 
 	logger := slog.Default()
-	handler := GetAllTemplates(logger, mockStorage)
+	handler := GetAllTemplates(logger, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/templates/all", nil)
 	rr := httptest.NewRecorder()
@@ -217,7 +218,7 @@ func TestGetAllTemplates_DBError(t *testing.T) {
 	mockStorage.On("GetAllTemplates", mock.Anything).Return(nil, errors.New("connection timeout"))
 
 	logger := slog.Default()
-	handler := GetAllTemplates(logger, mockStorage)
+	handler := GetAllTemplates(logger, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/template/all", nil)
 	rr := httptest.NewRecorder()
