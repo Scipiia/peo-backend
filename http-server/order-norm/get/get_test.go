@@ -481,29 +481,56 @@ func TestFinalReportNormOrders(t *testing.T) {
 		name  string
 		query string
 
+		expectedOrderNum string
+		expectedType     []string
+
 		products  []storage.PEOProduct
 		employees []storage.GetWorkers
 		mockError error
 
-		wantStatus int
-		checkJSON  bool
+		wantStatus   int
+		checkJSON    bool
+		needMock     bool
+		expectedBody string
 	}{
 		{
-			name:       "OK",
-			query:      "?order_num=Q6-777&type=window&type=door",
-			products:   []storage.PEOProduct{{}},
-			employees:  []storage.GetWorkers{{}},
-			wantStatus: http.StatusOK,
-			checkJSON:  true,
+			name:             "OK",
+			query:            "?order_num=Q6-777&type=window&type=door",
+			expectedOrderNum: "Q6-777",
+			expectedType:     []string{"window", "door"},
+			products:         []storage.PEOProduct{{}},
+			employees:        []storage.GetWorkers{{}},
+			wantStatus:       http.StatusOK,
+			needMock:         true,
+			checkJSON:        true,
 		},
 		{
-			name:       "error",
-			query:      "?order_num=Q6-777&type=window&type=door",
-			products:   nil,
-			employees:  nil,
-			wantStatus: http.StatusInternalServerError,
-			mockError:  errors.New("database error"),
-			checkJSON:  false,
+			name:             "error",
+			query:            "?order_num=Q6-777&type=window&type=door",
+			expectedOrderNum: "Q6-777",
+			expectedType:     []string{"window", "door"},
+			products:         nil,
+			employees:        nil,
+			wantStatus:       http.StatusInternalServerError,
+			needMock:         true,
+			mockError:        errors.New("database error"),
+			checkJSON:        false,
+		},
+		{
+			name:         "invalid from data",
+			query:        "?from=abc",
+			wantStatus:   http.StatusBadRequest,
+			needMock:     false,
+			checkJSON:    false,
+			expectedBody: "Неверный формат даты 'from'",
+		},
+		{
+			name:         "invalid to data",
+			query:        "?to=abc",
+			wantStatus:   http.StatusBadRequest,
+			needMock:     false,
+			checkJSON:    false,
+			expectedBody: "Неверный формат даты 'to'",
 		},
 	}
 
@@ -511,9 +538,22 @@ func TestFinalReportNormOrders(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := new(MockOrdersPEOGetter)
 
-			if tt.wantStatus != http.StatusBadRequest {
-				mockService.On("GetPEOProductsByCategory", mock.Anything, mock.Anything).
-					Return(tt.products, tt.employees, tt.mockError)
+			if tt.needMock {
+				mockService.On("GetPEOProductsByCategory", mock.Anything,
+					mock.MatchedBy(func(filter mysql.ProductFilter) bool {
+						if filter.OrderNum != tt.expectedOrderNum {
+							return false
+						}
+						if len(filter.Type) != len(tt.expectedType) {
+							return false
+						}
+						for i := range filter.Type {
+							if filter.Type[i] != tt.expectedType[i] {
+								return false
+							}
+						}
+						return true
+					})).Return(tt.products, tt.employees, tt.mockError)
 			}
 
 			log := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -526,6 +566,10 @@ func TestFinalReportNormOrders(t *testing.T) {
 			r.ServeHTTP(w, req)
 			assert.Equal(t, tt.wantStatus, w.Code)
 
+			if tt.expectedBody != "" {
+				assert.Contains(t, w.Body.String(), tt.expectedBody)
+			}
+
 			if tt.checkJSON {
 				var response map[string]interface{}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
@@ -534,7 +578,193 @@ func TestFinalReportNormOrders(t *testing.T) {
 				assert.Contains(t, response, "employees")
 			}
 
-			mockService.AssertExpectations(t)
+			if tt.needMock {
+				mockService.AssertExpectations(t)
+			}
+		})
+	}
+}
+
+type MockOrderNashelGetter struct {
+	mock.Mock
+}
+
+func (m *MockOrderNashelGetter) GetNashchelnikRawData(ctx context.Context, legacyID int64) (*storage.NashchelnikRawData, error) {
+	args := m.Called(ctx, legacyID)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*storage.NashchelnikRawData), args.Error(1)
+}
+
+func TestGetNashchelnikRawHandler(t *testing.T) {
+	tests := []struct {
+		name    string
+		id      string
+		orderId int64
+
+		result *storage.NashchelnikRawData
+
+		expectedBody string
+		mockError    error
+		wantStatus   int
+		checkJSON    bool
+		needMock     bool
+	}{
+		{
+			name:    "OK",
+			id:      "1",
+			orderId: 1,
+			result: &storage.NashchelnikRawData{
+				OrderNum: "Q6-777",
+			},
+			wantStatus: http.StatusOK,
+			checkJSON:  true,
+			needMock:   true,
+		},
+		{
+			name:         "error",
+			id:           "abc",
+			wantStatus:   http.StatusBadRequest,
+			expectedBody: "Invalid ID",
+			needMock:     false,
+		},
+		{
+			name:         "not found",
+			id:           "1",
+			orderId:      1,
+			wantStatus:   http.StatusNotFound,
+			mockError:    errors.New("not found"),
+			expectedBody: "Not found",
+			needMock:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := new(MockOrderNashelGetter)
+
+			mockService.On("GetNashchelnikRawData", mock.Anything, tt.orderId).
+				Return(tt.result, tt.mockError)
+
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+			r := chi.NewRouter()
+			r.Get("/api/orders/nashchelnik/raw/{id}", GetNashchelnikRawHandler(log, mockService))
+
+			req := httptest.NewRequest(http.MethodGet, "/api/orders/nashchelnik/raw/"+tt.id, nil)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			assert.Equal(t, tt.wantStatus, w.Code)
+
+			if tt.expectedBody != "" {
+				assert.Contains(t, w.Body.String(), tt.expectedBody)
+			}
+
+			if tt.checkJSON {
+				var response storage.NashchelnikRawData
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.result.OrderNum, response.OrderNum)
+			}
+
+			if tt.needMock {
+				mockService.AssertExpectations(t)
+			}
+		})
+	}
+}
+
+type MockOrderVitrageGetter struct {
+	mock.Mock
+}
+
+func (m *MockOrderVitrageGetter) GetNormOrderVitrage(ctx context.Context, id int64) ([]storage.GetWorkersVitrage, error) {
+	args := m.Called(ctx, id)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).([]storage.GetWorkersVitrage), args.Error(1)
+}
+
+func TestGetVitrageAssignments(t *testing.T) {
+	tests := []struct {
+		name    string
+		id      string
+		orderId int64
+
+		result []storage.GetWorkersVitrage
+
+		expectedBody string
+		mockError    error
+		wantStatus   int
+		checkJSON    bool
+		needMock     bool
+	}{
+		{
+			name:       "OK",
+			id:         "1",
+			orderId:    1,
+			result:     []storage.GetWorkersVitrage{{ID: 1}},
+			wantStatus: http.StatusOK,
+			checkJSON:  true,
+			needMock:   true,
+		},
+		{
+			name:         "invalid id",
+			id:           "abc",
+			wantStatus:   http.StatusBadRequest,
+			needMock:     false,
+			expectedBody: "неверный id заказа",
+		},
+		{
+			name:         "service error",
+			id:           "1",
+			orderId:      1,
+			mockError:    errors.New("db error"),
+			wantStatus:   http.StatusInternalServerError,
+			needMock:     true,
+			expectedBody: "ошибка получения назначений",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := new(MockOrderVitrageGetter)
+
+			if tt.needMock {
+				mockService.On("GetNormOrderVitrage", mock.Anything, tt.orderId).
+					Return(tt.result, tt.mockError)
+			}
+
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+			r := chi.NewRouter()
+			r.Get("/api/orders/{id}/vitr-assign", GetVitrageAssignments(log, mockService))
+
+			req := httptest.NewRequest(http.MethodGet, "/api/orders/"+tt.id+"/vitr-assign", nil)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			assert.Equal(t, tt.wantStatus, w.Code)
+
+			if tt.expectedBody != "" {
+				assert.Contains(t, w.Body.String(), tt.expectedBody)
+			}
+
+			if tt.checkJSON {
+				var response []storage.GetWorkersVitrage
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				require.NoError(t, err)
+				assert.Equal(t, tt.result, response)
+			}
+
+			if tt.needMock {
+				mockService.AssertExpectations(t)
+			}
 		})
 	}
 }
