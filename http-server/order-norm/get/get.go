@@ -14,27 +14,11 @@ import (
 	"github.com/go-chi/render"
 )
 
-type ResultGetNorm interface {
+type OrderGetter interface {
 	GetNormOrder(ctx context.Context, id int64) (*storage.GetOrderDetails, error)
-	GetNormOrdersByOrderNum(ctx context.Context, orderNum string, position int) ([]*storage.GetOrderDetails, error)
-	GetNormOrders(ctx context.Context, orderNum, orderType string) ([]storage.GetOrderDetails, error)
-	GetNormOrderIdSub(ctx context.Context, id int64) ([]*storage.GetOrderDetails, error)
-
-	GetSimpleOrderReport(ctx context.Context, orderNum string) (*storage.OrderFinalReport, error)
-	//GetFinalNormOrders(ctx context.Context) ([]storage.ReportFinalOrders, error)
-
-	GetPEOProductsByCategory(ctx context.Context, filter mysql.ProductFilter) ([]storage.PEOProduct, []storage.GetWorkers, error)
-
-	// TODO доп запрос за москитками
-	GetMosquitoOrderDetails(ctx context.Context, requestedID int64) (*storage.GetOrderDetails, error)
-	GetGutterOrderDetails(ctx context.Context, requestedID int64) (*storage.GetOrderDetails, error)
-
-	GetNashchelnikRawData(ctx context.Context, legacyID int64) (*storage.NashchelnikRawData, error)
-
-	GetNormOrderVitrage(ctx context.Context, id int64) ([]storage.GetWorkersVitrage, error)
 }
 
-func GetNormOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
+func GetNormOrder(log *slog.Logger, result OrderGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.GetNormOrder"
 
@@ -46,7 +30,7 @@ func GetNormOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
 		}
 
 		//log.Info("Получение нормировки", slog.Int64("id", id))
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		norm, err := result.GetNormOrder(ctx, id)
@@ -66,7 +50,11 @@ func GetNormOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
 	}
 }
 
-func GetNormOrdersOrderNum(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
+type OrderByOrderNumGetter interface {
+	GetNormOrdersByOrderNum(ctx context.Context, orderNum string, position int) ([]*storage.GetOrderDetails, error)
+}
+
+func GetNormOrdersOrderNum(log *slog.Logger, result OrderByOrderNumGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.order-norm.get.GetNormOrders"
 
@@ -80,12 +68,7 @@ func GetNormOrdersOrderNum(log *slog.Logger, result ResultGetNorm) http.HandlerF
 			return
 		}
 
-		//log.With(
-		//	slog.String("op", op),
-		//	slog.String("order_num", orderNum),
-		//).Info("Запрос на получение заказов")
-
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		orders, err := result.GetNormOrdersByOrderNum(ctx, orderNum, positionInt)
@@ -99,19 +82,17 @@ func GetNormOrdersOrderNum(log *slog.Logger, result ResultGetNorm) http.HandlerF
 	}
 }
 
-func GetNormOrders(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
+type OrdersGetter interface {
+	GetNormOrders(ctx context.Context, orderNum, orderType string) ([]storage.GetOrderDetails, error)
+}
+
+func GetNormOrders(log *slog.Logger, result OrdersGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.GetNormOrders"
 
 		// Получаем фильтр
 		orderNum := r.URL.Query().Get("order_num")
 		orderType := r.URL.Query().Get("type")
-
-		//log.With(
-		//	slog.String("op", op),
-		//	slog.String("order_num_filter", orderNum),
-		//	slog.String("order_type_filter", orderType),
-		//).Info("Запрос на получение заказов")
 
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
@@ -124,14 +105,18 @@ func GetNormOrders(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
 			return
 		}
 
-		//log.With(slog.Int("found", len(items))).Info("Заказы найдены")
-
 		// Возвращаем JSON
 		render.JSON(w, r, items)
 	}
 }
 
-func DoubleReportOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
+type OrderDoubleGetter interface {
+	GetNormOrderIdSub(ctx context.Context, id int64) ([]*storage.GetOrderDetails, error)
+	GetMosquitoOrderDetails(ctx context.Context, requestedID int64) (*storage.GetOrderDetails, error)
+	GetGutterOrderDetails(ctx context.Context, requestedID int64) (*storage.GetOrderDetails, error)
+}
+
+func DoubleReportOrder(log *slog.Logger, result OrderDoubleGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.DoubleReportOrder"
 
@@ -191,15 +176,19 @@ func DoubleReportOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc 
 	}
 }
 
-func FinalReportNormOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
+type OrderFinalGetter interface {
+	GetSimpleOrderReport(ctx context.Context, orderNum string) (*storage.OrderFinalReport, error)
+}
+
+func FinalReportNormOrder(log *slog.Logger, result OrderFinalGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.FinalReportNormOrder"
 
 		orderNum := chi.URLParam(r, "order_num")
 
-		log.Info("Получение нормировки", slog.String("orderNum", orderNum))
+		//log.Info("Получение нормировки", slog.String("orderNum", orderNum))
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		report, err := result.GetSimpleOrderReport(ctx, orderNum)
@@ -213,12 +202,16 @@ func FinalReportNormOrder(log *slog.Logger, result ResultGetNorm) http.HandlerFu
 	}
 }
 
-func FinalReportNormOrders(log *slog.Logger, result ResultGetNorm) http.HandlerFunc {
+type OrdersPEOGetter interface {
+	GetPEOProductsByCategory(ctx context.Context, filter mysql.ProductFilter) ([]storage.PEOProduct, []storage.GetWorkers, error)
+}
+
+func FinalReportNormOrders(log *slog.Logger, result OrdersPEOGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.order-norm.get.FinalReportNormOrders"
 
 		// Парсим query-параметры
-		fromStr := r.URL.Query().Get("from") // формат: 2025-04-01
+		fromStr := r.URL.Query().Get("from")
 		toStr := r.URL.Query().Get("to")
 		orderNum := r.URL.Query().Get("order_num")
 		typeIzd := r.URL.Query()["type"]
@@ -281,7 +274,11 @@ func FinalReportNormOrders(log *slog.Logger, result ResultGetNorm) http.HandlerF
 	}
 }
 
-func GetNashchelnikRawHandler(log *slog.Logger, storage ResultGetNorm) http.HandlerFunc {
+type OrderNashelGetter interface {
+	GetNashchelnikRawData(ctx context.Context, legacyID int64) (*storage.NashchelnikRawData, error)
+}
+
+func GetNashchelnikRawHandler(log *slog.Logger, storage OrderNashelGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.GetNashchelnikRawHandler"
 
@@ -308,7 +305,11 @@ func GetNashchelnikRawHandler(log *slog.Logger, storage ResultGetNorm) http.Hand
 	}
 }
 
-func GetVitrageAssignments(log *slog.Logger, storage ResultGetNorm) http.HandlerFunc {
+type OrderVitrageGetter interface {
+	GetNormOrderVitrage(ctx context.Context, id int64) ([]storage.GetWorkersVitrage, error)
+}
+
+func GetVitrageAssignments(log *slog.Logger, storage OrderVitrageGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.GetVitrageAssignments"
 
