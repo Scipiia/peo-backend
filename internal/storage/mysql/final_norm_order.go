@@ -245,12 +245,12 @@ func (s *Storage) fetchProducts(ctx context.Context, f ProductFilter) (map[int64
 			COALESCE(c.short_name_customer, p.customer_type) AS customer_type,
 			p.systema, p.type_izd, p.profile, p.count, p.sqr, p.brigade, 
 			p.norm_money, p.position, p.ready_date,
-			COALESCE(p.coefficient, dc.coefficient) AS coefficient, p.name
+			COALESCE(p.coefficient, dc.coefficient) AS coefficient, p.name, p.sqr_stv
 		FROM dem_product_instances_al p
 		LEFT JOIN dem_customer_al c ON p.customer = c.name
 		LEFT JOIN dem_coefficient_al dc ON dc.type = p.type
 		%s
-		ORDER BY p.ready_date DESC, p.order_num`, whereClause)
+		ORDER BY p.ready_date DESC, p.id DESC`, whereClause)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -266,13 +266,14 @@ func (s *Storage) fetchProducts(ctx context.Context, f ProductFilter) (map[int64
 		var parentID sql.NullInt64
 		var readyDate sql.NullTime
 		var coef sql.NullFloat64
+		var sqrStv sql.NullFloat64
 
 		err := rows.Scan(
 			&p.ID, &p.OrderNum, &p.Customer, &p.TotalTime, &p.CreatedAt, &p.Status,
 			&p.PartType, &p.Type, &parentID, &p.ParentAssembly,
 			&p.CustomerType, &p.Systema, &p.TypeIzd, &p.Profile,
 			&p.Count, &p.Sqr, &p.Brigade, &p.NormMoney, &p.Position,
-			&readyDate, &coef, &p.Name,
+			&readyDate, &coef, &p.Name, &sqrStv,
 		)
 		if err != nil {
 			return nil, nil, err
@@ -289,6 +290,10 @@ func (s *Storage) fetchProducts(ctx context.Context, f ProductFilter) (map[int64
 		if coef.Valid {
 			v := coef.Float64
 			p.Coefficient = &v
+		}
+		if sqrStv.Valid {
+			s := sqrStv.Float64
+			p.SqrStv = &s
 		}
 
 		p.EmployeeMinutes = make(map[int64]float64)

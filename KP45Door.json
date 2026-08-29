@@ -198,7 +198,7 @@
     },
     "operation": "podg_derj_shetki",
     "unitField": "HasPritvorKP40",
-    "value_per_unit": 0.050,
+    "value_per_unit": 0.05,
     "minutes_per_unit": 3
   },
   {
@@ -244,12 +244,16 @@
     },
     "operation": "pereh_pdp",
     "unitField": "Petli3Section",
-    "value_per_unit": 0.075,
-    "minutes_per_unit": 4.5
+    "value_per_unit": 0.067,
+    "minutes_per_unit": 4
   },
   {
     "mode": "additivePlusMultiplied",
-    "condition": {"PetliForNaveshCount": {"min": 1}},
+    "condition": {
+      "PetliForNaveshCount": {
+        "min": 1
+      }
+    },
     "operation": "navesh_stv_yst_otv_plank_reg_petli",
     "unitField": "PetliForNaveshCount",
     "value_per_unit": 0.067,
@@ -257,7 +261,11 @@
   },
   {
     "mode": "additivePlusMultiplied",
-    "condition": {"Petli3Section": {"min": 1}},
+    "condition": {
+      "Petli3Section": {
+        "min": 1
+      }
+    },
     "operation": "navesh_stv_yst_otv_plank_reg_petli",
     "unitField": "Petli3Section",
     "value_per_unit": 0.1,

@@ -28,5 +28,6 @@ type UpdateFinalOrderDetails struct {
 	TypeIzd        *string  `json:"type_izd"`
 	CustomerType   *string  `json:"customer_type"`
 	Coefficient    *float64 `json:"coefficient"`
+	SqrStv         *float64 `json:"sqr_stv"`
 	ID             int64    `json:"id"`
 }

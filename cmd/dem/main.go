@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	auth_ldap "vue-golang/internal/auth-ldap"
 	"vue-golang/internal/config"
 	generate_excel "vue-golang/internal/service/generate-excel"
 	get_norm_mosquito "vue-golang/internal/service/get-norm-mosquito"
@@ -29,18 +30,29 @@ type App struct {
 	Log     *slog.Logger
 	Storage *mysql.Storage
 	Service Service
+	//LdapClient   *auth_ldap.LDAPClient
+	ConfigClient *auth_ldap.ConfigAuthenticator
+	JWTService   *auth_ldap.JWTService
 }
 
 func main() {
 	cfg := config.MustConfig()
 
+	//slog.Any("Configggg", cfg)
+	//fmt.Println("CFFFFGG", cfg)
+
 	log := setupLogger(cfg.Env)
 
 	storage, err := mysql.New(*cfg)
 	if err != nil {
-		log.Error("failed to open db", err)
+		log.Error("failed to open db", slog.Any("err", err))
 		os.Exit(1)
 	}
+
+	configClient := auth_ldap.NewConfigAuthenticator(cfg.AdminLogin, cfg.AdminPass, cfg.AuthConfig.AdminPermission)
+	// TODO если будет авторизация через ldap
+	//ldapClient := auth_ldap.NewLDAPClient(cfg.LDAPConfig)
+	jwtService := auth_ldap.NewJWTService(cfg.JWTConfig)
 
 	recalculateService := recalculate.NewNormService(storage)
 	generateExcelService := generate_excel.NewGenerateService(storage)
@@ -57,6 +69,9 @@ func main() {
 			GenerateExcelService: generateExcelService,
 			//MosquitoService:      mosquitoService,
 		},
+		//LdapClient: ldapClient,
+		ConfigClient: configClient,
+		JWTService:   jwtService,
 	}
 
 	srv := &http.Server{
@@ -69,7 +84,7 @@ func main() {
 
 	err = srv.ListenAndServe()
 	if err != nil {
-		log.Error("failed start server ", err)
+		log.Error("failed start server ", slog.Any("err", err))
 	}
 
 	log.Error("server stopped")
@@ -100,7 +115,7 @@ func (h *dualHandler) Handle(ctx context.Context, r slog.Record) error {
 		cloned := r.Clone()
 		fileErr := h.errorHandler.Handle(ctx, cloned)
 		if fileErr != nil {
-
+			return fileErr
 		}
 	}
 

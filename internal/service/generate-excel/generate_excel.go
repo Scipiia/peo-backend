@@ -53,6 +53,10 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 		baseHeaders = []string{"Витраж", "№ Заказа", "Корп/дил", "Заказчик", "Наименование", "Кол-во", "Площадь", "Площадь створки", "Н/час", "Изготовитель", "Н/час", "Н/руб", "Разница"}
 	} else if reportType == "mosquito" {
 		baseHeaders = []string{"№ Заказа", "№ Партии", "Заказчик", "Наименование", "Кол-во", "Площадь", "Н/час", "Изготовитель", "Тип клиента", "Вид изделия", "Н/час", "Н/руб", "VSN"}
+	} else if reportType == "vodootliv" {
+		baseHeaders = []string{"№ Заказа", "Заказчик", "Наименование", "Кол-во", "Площадь", "Н/час", "Н/руб", "Изготовитель", "Тип клиента", "Вид изделия"}
+	} else if reportType == "vitrage" {
+		baseHeaders = []string{"№ Заказа", "Тип клиента", "Заказчик", "Наименование", "Система", "Категория", "Система", "Кол-во", "Площадь", "Н/час", "Н/руб", "Изготовитель"}
 	}
 
 	// 2. Пишем базовую шапку
@@ -97,14 +101,14 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 		} else if reportType == "loggia" {
 			// Заполняем 13 колонок для Лоджий
 			//"Витраж", "№ Заказа", "Корп/дил", "Заказчик", "Наименование", "Кол-во", "Площадь", "Площадь ", "Н/час", "Изготовитель", "Н/час", "Н/руб", "Разница"}
-			f.SetCellValue(sheet, cellName(1, rowNum), p.ParentAssembly) // Витраж (ID/Позиция)
-			f.SetCellValue(sheet, cellName(2, rowNum), p.OrderNum)       // № Заказа
-			f.SetCellValue(sheet, cellName(3, rowNum), p.CustomerType)   // Корп/дил
-			f.SetCellValue(sheet, cellName(4, rowNum), p.Customer)       // Заказчик
-			f.SetCellValue(sheet, cellName(5, rowNum), p.TypeIzd)        // Наименование
-			f.SetCellValue(sheet, cellName(6, rowNum), p.Count)          // Кол-во
-			f.SetCellValue(sheet, cellName(7, rowNum), round(p.Sqr))     // Площадь
-			f.SetCellValue(sheet, cellName(8, rowNum), "-")              // Площадь створки для лоджии(пока пусто)
+			f.SetCellValue(sheet, cellName(1, rowNum), p.ParentAssembly)
+			f.SetCellValue(sheet, cellName(2, rowNum), p.OrderNum)
+			f.SetCellValue(sheet, cellName(3, rowNum), p.CustomerType)
+			f.SetCellValue(sheet, cellName(4, rowNum), p.Customer)
+			f.SetCellValue(sheet, cellName(5, rowNum), p.TypeIzd)
+			f.SetCellValue(sheet, cellName(6, rowNum), p.Count)
+			f.SetCellValue(sheet, cellName(7, rowNum), round(p.Sqr))
+			f.SetCellValue(sheet, cellName(8, rowNum), "-")
 			f.SetCellValue(sheet, cellName(9, rowNum), round(p.TotalTime))
 			f.SetCellValue(sheet, cellName(10, rowNum), p.Brigade)
 			f.SetCellValue(sheet, cellName(11, rowNum), round(p.NormMoney))
@@ -122,6 +126,30 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			f.SetCellValue(sheet, cellName(11, rowNum), round(p.TotalTime))
 			f.SetCellValue(sheet, cellName(12, rowNum), round(p.NormMoney))
 			f.SetCellValue(sheet, cellName(13, rowNum), "")
+		} else if reportType == "vodootliv" {
+			f.SetCellValue(sheet, cellName(1, rowNum), p.OrderNum)
+			f.SetCellValue(sheet, cellName(2, rowNum), p.Customer)
+			f.SetCellValue(sheet, cellName(3, rowNum), p.Name)
+			f.SetCellValue(sheet, cellName(4, rowNum), p.Count)
+			f.SetCellValue(sheet, cellName(5, rowNum), p.Sqr)
+			f.SetCellValue(sheet, cellName(6, rowNum), round(p.TotalTime))
+			f.SetCellValue(sheet, cellName(7, rowNum), round(p.NormMoney))
+			f.SetCellValue(sheet, cellName(8, rowNum), "-")
+			f.SetCellValue(sheet, cellName(9, rowNum), p.CustomerType)
+			f.SetCellValue(sheet, cellName(10, rowNum), p.TypeIzd)
+		} else if reportType == "vitrage" {
+			f.SetCellValue(sheet, cellName(1, rowNum), p.OrderNum)
+			f.SetCellValue(sheet, cellName(2, rowNum), p.CustomerType)
+			f.SetCellValue(sheet, cellName(3, rowNum), p.Customer)
+			f.SetCellValue(sheet, cellName(4, rowNum), convertType(p.Type))
+			f.SetCellValue(sheet, cellName(5, rowNum), p.Systema)
+			f.SetCellValue(sheet, cellName(6, rowNum), safeFloat64(p.SqrStv))
+			f.SetCellValue(sheet, cellName(7, rowNum), p.TypeIzd)
+			f.SetCellValue(sheet, cellName(8, rowNum), p.Count)
+			f.SetCellValue(sheet, cellName(9, rowNum), p.Sqr)
+			f.SetCellValue(sheet, cellName(10, rowNum), round(p.TotalTime))
+			f.SetCellValue(sheet, cellName(11, rowNum), round(p.NormMoney))
+			f.SetCellValue(sheet, cellName(12, rowNum), p.Brigade)
 		}
 
 		// 4. Сотрудники (всегда СРАБОТАЕТ ПРАВИЛЬНО благодаря empColMap)
@@ -152,6 +180,10 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	doorStats := g.getDoorStats(products)
 	loggiaStats := g.getLoggiaStats(products)
 	mosquitoStats := g.getMosquitoStats(products)
+	vodootlivStats := g.getVodootlivStats(products)
+	vitrageStats := g.getVitrageStats(products)
+
+	//slog.Info("VODOOTL", vodootlivStats)
 
 	var allStats []StatsRow
 
@@ -162,6 +194,10 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 		allStats = append(allStats, loggiaStats...)
 	} else if reportType == "mosquito" {
 		allStats = append(allStats, mosquitoStats...)
+	} else if reportType == "vodootliv" {
+		allStats = append(allStats, vodootlivStats...)
+	} else if reportType == "vitrage" {
+		allStats = append(allStats, vitrageStats...)
 	}
 
 	startRowStats := len(products) + 10
@@ -256,10 +292,14 @@ func getReportType(types []string) string {
 		switch t {
 		case "window", "door", "glyhar":
 			return "window"
-		case "loggia", "vitrage":
+		case "loggia":
 			return "loggia"
 		case "mosquito":
 			return "mosquito"
+		case "vodootliv":
+			return "vodootliv"
+		case "vitrage":
+			return "vitrage"
 		}
 	}
 	return "window"
@@ -273,6 +313,8 @@ func convertType(nameType string) string {
 		return "дверь"
 	case "glyhar":
 		return "окно"
+	case "vitrage":
+		return "витраж"
 	default:
 		return ""
 	}
@@ -280,6 +322,13 @@ func convertType(nameType string) string {
 
 func round(num float64) float64 {
 	return math.Round(num*1000) / 1000
+}
+
+func safeFloat64(f *float64) float64 {
+	if f == nil {
+		return 0
+	}
+	return *f
 }
 
 //TODO суммарная статистика по заказам
@@ -466,6 +515,258 @@ func (g *GenerateExcelService) getMosquitoStats(products []storage.PEOProduct) [
 	result = append(result, combined)
 	result = append(result, totalMs)
 	result = append(result, unknown)
+
+	return result
+}
+
+func (g *GenerateExcelService) getVodootlivStats(products []storage.PEOProduct) []StatsRow {
+	var vo, ocn, combined, totalVo, unknown StatsRow
+
+	vo.Label = "Водоотлив"
+	ocn.Label = "Оцинковка"
+	combined.Label = "Смешанные заказы(vo+ocn)"
+	totalVo.Label = "Всего водоотливов"
+	unknown.Label = "Неизвестные изделия"
+
+	for _, p := range products {
+		typeIzd := strings.ToLower(strings.TrimSpace(p.TypeIzd))
+
+		if p.Type == "vodootliv" {
+			addStats(&totalVo, p)
+			if typeIzd == "vo" {
+				addStats(&vo, p)
+			} else if typeIzd == "ocn" {
+				addStats(&ocn, p)
+			} else if strings.Contains(typeIzd, "+") {
+				addStats(&combined, p)
+			} else {
+				addStats(&unknown, p)
+			}
+		}
+	}
+	var result []StatsRow
+
+	result = append(result, vo)
+	result = append(result, ocn)
+	result = append(result, combined)
+	result = append(result, totalVo)
+	result = append(result, unknown)
+
+	return result
+}
+
+//
+//func (g *GenerateExcelService) getVitrageStats(products []storage.PEOProduct) []StatsRow {
+//	var vitrage45Kat1, vitrage45Kat2, vitrage45Kat3, vitrage45Kat4, vitrage74Kat1, vitrage74Kat2, vitrage74Kat3, vitrage74Kat4,
+//		vitrageAlutechKat1X, vitrageAlutechKat2X, vitrageAlutechKat3X, vitrageAlutechKat4X, vitrageAlutechKat1T, vitrageAlutechKat2T,
+//		vitrageAlutechKat3T, vitrageAlutechKat4T, sum45And74 StatsRow
+//
+//	vo.Label = "Водоотлив"
+//	ocn.Label = "Оцинковка"
+//	combined.Label = "Смешанные заказы(vo+ocn)"
+//	totalVo.Label = "Всего водоотливов"
+//	unknown.Label = "Неизвестные изделия"
+//
+//	for _, p := range products {
+//		typeIzd := strings.ToLower(strings.TrimSpace(p.TypeIzd))
+//
+//		if p.Type == "vodootliv" {
+//			addStats(&totalVo, p)
+//			if typeIzd == "vo" {
+//				addStats(&vo, p)
+//			} else if typeIzd == "ocn" {
+//				addStats(&ocn, p)
+//			} else if strings.Contains(typeIzd, "+") {
+//				addStats(&combined, p)
+//			} else {
+//				addStats(&unknown, p)
+//			}
+//		}
+//	}
+//	var result []StatsRow
+//
+//	result = append(result, vo)
+//	result = append(result, ocn)
+//	result = append(result, combined)
+//	result = append(result, totalVo)
+//	result = append(result, unknown)
+//
+//	return result
+//}
+
+func (g *GenerateExcelService) getVitrageStats(products []storage.PEOProduct) []StatsRow {
+	// Создаем мапы для накопления данных по каждой группе
+	stats := make(map[string]*StatsRow)
+
+	// Инициализируем все возможные комбинации
+	profiles := []string{"45", "74"}
+	categories := []string{"1", "2", "3", "4"}
+
+	// Для 45 и 74
+	for _, profile := range profiles {
+		for _, cat := range categories {
+			key := fmt.Sprintf("%s_%s", profile, cat)
+			stats[key] = &StatsRow{
+				Label: fmt.Sprintf("%s - Категория %s", profile, cat),
+			}
+		}
+	}
+
+	// Для Алютеха (с разделением на Х/Т)
+	for _, sys := range []string{"х", "т"} {
+		for _, cat := range categories {
+			key := fmt.Sprintf("Алютех_%s_%s", sys, cat)
+			label := "Алютех"
+			if sys == "х" {
+				label += " Х"
+			} else {
+				label += " Т"
+			}
+			label += fmt.Sprintf(" - Категория %s", cat)
+			stats[key] = &StatsRow{Label: label}
+		}
+	}
+
+	// Обрабатываем продукты
+	for _, p := range products {
+		if p.Type != "vitrage" {
+			continue
+		}
+
+		// Определяем категорию
+		cat := ""
+		if p.SqrStv != nil {
+			cat = fmt.Sprintf("%.0f", *p.SqrStv)
+		}
+		if cat == "" {
+			continue // Пропускаем витражи без категории
+		}
+
+		// Определяем ключ
+		profile := strings.TrimSpace(p.Profile)
+		key := ""
+
+		if profile == "45" || profile == "74" {
+			key = fmt.Sprintf("%s_%s", profile, cat)
+		} else if strings.Contains(strings.ToLower(profile), "алютех") {
+			sys := strings.ToLower(strings.TrimSpace(p.Systema))
+			if sys == "х" || sys == "т" {
+				key = fmt.Sprintf("Алютех_%s_%s", sys, cat)
+			}
+		}
+
+		if key == "" || stats[key] == nil {
+			continue
+		}
+
+		// Используем существующую функцию addStats
+		addStats(stats[key], p)
+	}
+
+	// Формируем результат в нужном порядке
+	var result []StatsRow
+
+	// 1. Система 45
+	for _, cat := range categories {
+		key := fmt.Sprintf("45_%s", cat)
+		if stats[key].Count > 0 {
+			result = append(result, *stats[key])
+		}
+	}
+	// Итого по 45
+	total45 := StatsRow{Label: "ИТОГО по 45"}
+	for _, cat := range categories {
+		key := fmt.Sprintf("45_%s", cat)
+		total45.Count += stats[key].Count
+		total45.Sqr += stats[key].Sqr
+		total45.Hours += stats[key].Hours
+		total45.Money += stats[key].Money
+	}
+	if total45.Count > 0 {
+		result = append(result, total45)
+	}
+
+	// 2. Система 74
+	for _, cat := range categories {
+		key := fmt.Sprintf("74_%s", cat)
+		if stats[key].Count > 0 {
+			result = append(result, *stats[key])
+		}
+	}
+	// Итого по 74
+	total74 := StatsRow{Label: "ИТОГО по 74"}
+	for _, cat := range categories {
+		key := fmt.Sprintf("74_%s", cat)
+		total74.Count += stats[key].Count
+		total74.Sqr += stats[key].Sqr
+		total74.Hours += stats[key].Hours
+		total74.Money += stats[key].Money
+	}
+	if total74.Count > 0 {
+		result = append(result, total74)
+	}
+
+	// 3. Сумма 45 + 74
+	sum4574 := StatsRow{
+		Label: "СУММА 45 + 74",
+		Count: total45.Count + total74.Count,
+		Sqr:   total45.Sqr + total74.Sqr,
+		Hours: total45.Hours + total74.Hours,
+		Money: total45.Money + total74.Money,
+	}
+	if sum4574.Count > 0 {
+		result = append(result, sum4574)
+	}
+
+	// 4. Алютех Х
+	for _, cat := range categories {
+		key := fmt.Sprintf("Алютех_х_%s", cat)
+		if stats[key].Count > 0 {
+			result = append(result, *stats[key])
+		}
+	}
+	totalAluX := StatsRow{Label: "ИТОГО Алютех Х"}
+	for _, cat := range categories {
+		key := fmt.Sprintf("Алютех_х_%s", cat)
+		totalAluX.Count += stats[key].Count
+		totalAluX.Sqr += stats[key].Sqr
+		totalAluX.Hours += stats[key].Hours
+		totalAluX.Money += stats[key].Money
+	}
+	if totalAluX.Count > 0 {
+		result = append(result, totalAluX)
+	}
+
+	// 5. Алютех Т
+	for _, cat := range categories {
+		key := fmt.Sprintf("Алютех_т_%s", cat)
+		if stats[key].Count > 0 {
+			result = append(result, *stats[key])
+		}
+	}
+	totalAluT := StatsRow{Label: "ИТОГО Алютех Т"}
+	for _, cat := range categories {
+		key := fmt.Sprintf("Алютех_т_%s", cat)
+		totalAluT.Count += stats[key].Count
+		totalAluT.Sqr += stats[key].Sqr
+		totalAluT.Hours += stats[key].Hours
+		totalAluT.Money += stats[key].Money
+	}
+	if totalAluT.Count > 0 {
+		result = append(result, totalAluT)
+	}
+
+	// 6. Сумма Алютех (Х + Т)
+	sumAlu := StatsRow{
+		Label: "СУММА Алютех (Х + Т)",
+		Count: totalAluX.Count + totalAluT.Count,
+		Sqr:   totalAluX.Sqr + totalAluT.Sqr,
+		Hours: totalAluX.Hours + totalAluT.Hours,
+		Money: totalAluX.Money + totalAluT.Money,
+	}
+	if sumAlu.Count > 0 {
+		result = append(result, sumAlu)
+	}
 
 	return result
 }

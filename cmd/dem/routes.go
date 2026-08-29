@@ -1,15 +1,13 @@
 package main
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/rs/cors"
 	"net/http"
 	"os"
 	"path/filepath"
 	getadmincoef "vue-golang/http-server/admin/get"
 	saveadmincoef "vue-golang/http-server/admin/save"
 	upadmincoef "vue-golang/http-server/admin/update"
+	authLDAP "vue-golang/http-server/auth"
 	generate_excel "vue-golang/http-server/generate-report/generate-excel"
 	getmaterials "vue-golang/http-server/materials/get"
 	getorder "vue-golang/http-server/order-dem/get"
@@ -23,6 +21,10 @@ import (
 	getWorkers "vue-golang/http-server/workers/get"
 	saveWorkers "vue-golang/http-server/workers/save"
 	"vue-golang/internal/middleware/auth"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/rs/cors"
 )
 
 //type Service interface {
@@ -51,6 +53,13 @@ func routes(app *App) *chi.Mux {
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	//router.Use(middleware.URLFormat)
+
+	//TODO login
+	router.Post("/api/auth/login", authLDAP.HandleLogin(app.Log, app.ConfigClient, app.JWTService))
+	router.With(
+		auth.JWTAuth(app.JWTService),
+		auth.RequirePermission("norms:read"),
+	).Get("/api/auth/test", authLDAP.HandleTestProtected(app.Log))
 
 	//TODO массив со всеми заказами из дема
 	router.Get("/api/orders", getorder.GetOrdersFilter(app.Log, app.Storage))
@@ -105,9 +114,11 @@ func routes(app *App) *chi.Mux {
 	router.Post("/api/orders/nashchelnik/calc", save.SaveNashchelnikCalc(app.Log, app.Storage))
 	router.Get("/api/orders/nashchelnik/raw/{id}", get.GetNashchelnikRawHandler(app.Log, app.Storage))
 
+	router.Get("/api/orders/{id}/vitr-assign", get.GetVitrageAssignments(app.Log, app.Storage))
+
 	//TODO adminPanel
 	adminRouter := chi.NewRouter()
-	adminRouter.Use(auth.BasicAuth(app.Config.AdminLogin, app.Config.AdminPass))
+	adminRouter.Use(auth.JWTAuth(app.JWTService))
 
 	adminRouter.Get("/all_templates", gettemplate.GetAllTemplatesAdmin(app.Log, app.Storage))
 	adminRouter.Get("/template", gettemplate.GetTemplatesByCodeAdmin(app.Log, app.Storage))
@@ -139,11 +150,15 @@ func routes(app *App) *chi.Mux {
 	router.Handle("/img/*", fileServer)
 	//router.Handle("/favicon.ico", fileServer)
 
-	router.With(auth.BasicAuth(app.Config.AdminLogin, app.Config.AdminPass)).Handle("/admin/*",
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, filepath.Join("./frontend-dist", "index.html"))
-		}),
-	)
+	// router.With(auth.BasicAuth(app.Config.AdminLogin, app.Config.AdminPass)).Handle("/admin/*",
+	// 	http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 		http.ServeFile(w, r, filepath.Join("./frontend-dist", "index.html"))
+	// 	}),
+	// )
+
+	router.Handle("/admin/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, filepath.Join("./frontend-dist", "index.html"))
+	}))
 
 	//SPA fallback: любой другой путь → index.html
 	router.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {

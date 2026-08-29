@@ -18,19 +18,6 @@ func New(cfg config.Config) (*Storage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to open db: %w", op, err)
 	}
-	//dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=%v",
-	//	cfg.DBUser,
-	//	cfg.DBPassword,
-	//	cfg.DBHost,
-	//	cfg.DBPort,
-	//	cfg.DBName,
-	//	cfg.ParseTime,
-	//)
-	////fmt.Printf(dsn)
-	//db, err := sql.Open("mysql", dsn)
-	//if err != nil {
-	//	return nil, fmt.Errorf("%s: failed to open db: %w", op, err)
-	//}
 
 	return &Storage{db: db}, nil
 }
