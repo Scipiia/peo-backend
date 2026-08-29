@@ -96,7 +96,7 @@ func (s *Storage) GetNormOrders(ctx context.Context, orderNum, orderType string)
 	const op = "storage.mysql.GetNormOrders"
 
 	stmt := `SELECT id, order_num, name, count, total_time, created_at, type, part_type, parent_product_id, parent_assembly, status, position FROM dem_product_instances_al 
-        	WHERE 1=1 AND (?='' OR order_num LIKE CONCAT('%', ?, '%')) AND (? = '' OR type = ?) AND part_type='main' ORDER BY created_at DESC LIMIT 25`
+        	WHERE 1=1 AND (?='' OR order_num LIKE CONCAT('%', ?, '%')) AND (? = '' OR type = ?) AND part_type='main' ORDER BY created_at DESC LIMIT 50`
 
 	rows, err := s.db.QueryContext(ctx, stmt, orderNum, orderNum, orderType, orderType)
 	if err != nil {
@@ -141,12 +141,11 @@ func (s *Storage) GetNormOrders(ctx context.Context, orderNum, orderType string)
         	AND dem_product_instances_al.type = 'mosquito'
         	AND dem_product_instances_al.part_type = 'main')
 		ORDER BY date DESC
-		LIMIT 25`
+		LIMIT 50`
 
 		rowsMoskit, err := s.db.QueryContext(ctx, stmtMoskit, orderNum, orderNum)
 
 		if err != nil {
-			// ⚠️ Не падаем, если легаси недоступен — просто вернём внутренние заказы
 			slog.Warn("failed to fetch mosquito orders", "op", op, "err", err)
 		} else {
 			defer rowsMoskit.Close()
@@ -336,221 +335,35 @@ func (s *Storage) GetNormOrderIdSub(ctx context.Context, id int64) ([]*storage.G
 	return results, nil
 }
 
-//func (s *Storage) GetMosquitoOrderDetails(ctx context.Context, orderID int64) ([]*storage.GetOrderDetails, error) {
-//	const op = "storage.mysql.GetMosquitoOrderDetails"
-//	slog.Info("Requested ID", "id", orderID)
-//
-//	// 1. Сначала пробуем найти как внутренний ID (если фронт уже подменил)
-//	var legacyID int64
-//	var orderNum, orderName string
-//	var orderDate time.Time
-//
-//	var detail storage.GetOrderDetails
-//
-//	// Проверяем, есть ли это ID в dem_product_instances_al как москитка
-//	err := s.db.QueryRowContext(ctx, `
-//        SELECT id, order_num, name, created_at
-//        FROM dem_product_instances_al
-//        WHERE id = ? AND type = 'mosquito'
-//    `, orderID).Scan(&legacyID, &orderNum, &orderName, &orderDate)
-//
-//	if err == nil {
-//		// ✅ УСПЕХ: Мы нашли якорь. Используем legacy_id для запроса к старой CRM.
-//		slog.Debug("Found internal anchor", "internal_id", orderID, "legacy_id", legacyID)
-//	} else if err == sql.ErrNoRows {
-//		// ⚠️ НЕ НАШЛИ во внутренней базе. Значит, requestedID — это скорее всего Legacy ID.
-//		// Проверяем, существует ли он в старой CRM напрямую.
-//		slog.Debug("No internal anchor found, assuming Legacy ID")
-//
-//		var checkID int64
-//		errCheck := s.db.QueryRowContext(ctx, `SELECT idorders FROM dem_orders WHERE idorders = ? AND ms = '1'`, orderID).Scan(&checkID)
-//
-//		if errCheck == nil {
-//			// Это валидный Legacy ID
-//			legacyID = orderID
-//			// Нам все равно придется сходить за деталями (name, date) чуть ниже,
-//			// но пока просто продолжаем.
-//		} else {
-//			// ❌ ПРОВАЛ: Нет ни во внутренней базе, ни в старой.
-//			return nil, fmt.Errorf("%s: mosquito order %d not found anywhere", op, orderID)
-//		}
-//	} else {
-//		return nil, fmt.Errorf("%s: db error checking anchor: %w", op, err)
-//	}
-//
-//	// ============================================================
-//	// 1. Базовая информация (из dem_orders)
-//	// ============================================================
-//	//stmtOrder := `
-//	//	SELECT
-//	//		idorders, numorders, 'Москитная сетка' as ordername, FROM_UNIXTIME(date),
-//	//		'mosquito' as type, 'main' as part_type, 'in_production' as status,
-//	//		1 as count, 0 as total_time, 0 as position,
-//	//		NOW() as created_at, NOW() as updated_at,
-//	//		'' as parent_assembly, 0 as parent_product_id,
-//	//		'' as template_code, '' as head_name, '' as type_izd,
-//	//		NULL as ready_date
-//	//	FROM dem_orders
-//	//	WHERE idorders = ? AND ms = '1'
-//	//`
-//	//
-//	//var detail storage.GetOrderDetails
-//	//var readyDate sql.NullTime
-//	//
-//	//err := s.db.QueryRowContext(ctx, stmtOrder, orderID).Scan(
-//	//	&detail.ID, &detail.OrderNum, &detail.Name, &detail.CreatedAT,
-//	//	&detail.Type, &detail.PartType, &detail.Status,
-//	//	&detail.Count, &detail.TotalTime, &detail.Position,
-//	//	&detail.CreatedAT, &detail.UpdatedAT,
-//	//	&detail.ParentAssembly, &detail.ParentProductID,
-//	//	&detail.TemplateCode, &detail.HeadName, &detail.TypeIzd,
-//	//	&readyDate,
-//	//)
-//	//if err == sql.ErrNoRows {
-//	//	return nil, fmt.Errorf("%s: mosquito order %d not found", op, orderID)
-//	//}
-//	//if err != nil {
-//	//	return nil, fmt.Errorf("%s: query order: %w", op, err)
-//	//}
-//
-//	stmtParamMs := `SELECT SUM(kol_vo) as kol_vo,SUM(kol_vo * weight * hight) sqr FROM dem_param_moskit WHERE orderid = ?`
-//
-//	var count, sqr float64
-//	err = s.db.QueryRowContext(ctx, stmtParamMs, orderID).Scan(&count, &sqr)
-//	if err != nil {
-//		// Если таблица пуста или ошибка, не ломаем весь процесс, просто логируем
-//		slog.Warn("failed to get mosquito params", "op", op, "err", err)
-//		count = 0
-//		sqr = 0
-//	}
-//
-//	val := sqr / 1000000.0
-//	allSqr := math.Round(val*1000) / 1000
-//	detail.Count = count
-//	detail.Sqr = allSqr
-//
-//	// ✅ КРИТИЧНО: инициализируем слайсы, чтобы в JSON улетело [], а не null
-//	detail.Operations = make([]storage.NormOperation, 0)
-//
-//	// ============================================================
-//	// 2. Операции из dem_orderdetails (type_m_id = 30 → trud)
-//	// ============================================================
-//	const TRUD_TYPE_ID = 30
-//
-//	stmtOps := `
-//    SELECT
-//        d.name_mat,
-//        SUM(d.allowances) as total_value,
-//        SUM(d.kol_vo) as total_count
-//    FROM dem_orderdetails d
-//    WHERE d.orderid = ?
-//      AND d.type_m_id = ?                      -- Только операции (trud)
-//    GROUP BY d.articul_mat, d.name_mat, d.messure
-//    ORDER BY FIELD(d.name_mat,
-//        'Напиловка',
-//        'Сборка, опрессовка',
-//        'Сборка',
-//        'Скатка',
-//        'Установка крепежа',
-//        'Изготовление',
-//        'Установка защиты (вилатерм)'
-//    ), d.name_mat ASC
-//`
-//
-//	opsRows, err := s.db.QueryContext(ctx, stmtOps, orderID, TRUD_TYPE_ID)
-//	if err != nil {
-//		return nil, fmt.Errorf("%s: query operations: %w", op, err)
-//	}
-//	defer opsRows.Close()
-//
-//	for opsRows.Next() {
-//		var oper storage.NormOperation
-//		var rawHours float64
-//		var name string
-//
-//		// ⚠️ Порядок Scan должен точно совпадать с порядком SELECT выше!
-//		err := opsRows.Scan(
-//			&name,       // name_mat → operation_label
-//			&rawHours,   // SUM(value) → value (суммарные часы)
-//			&oper.Count, // SUM(kol_vo) → count (общее количество)
-//		)
-//		if err != nil {
-//			return nil, fmt.Errorf("%s: scan operation: %w", op, err)
-//		}
-//
-//		oper.Label = name
-//		oper.Name = name
-//		oper.Value = rawHours          // Норма в часах
-//		oper.Minutes = rawHours * 60.0 // Норма в минутах
-//
-//		// ✅ Инициализируем слайс исполнителей
-//		oper.AssignedWorkers = make([]storage.AssignedWorker, 0)
-//
-//		// 🔍 Загрузка исполнителей: теперь ищем по имени операции (после агрегации)
-//		stmtExec := `
-//        SELECT employee_id, actual_minutes, actual_value
-//        FROM dem_operation_executors_al
-//        WHERE product_id = ? AND operation_name = ?
-//    `
-//		execRows, err := s.db.QueryContext(ctx, stmtExec, orderID, oper.Label)
-//		if err != nil {
-//			slog.Warn("failed to query executors", "op", op, "operation_name", oper.Label, "err", err)
-//		} else {
-//			defer execRows.Close()
-//			for execRows.Next() {
-//				var ex storage.AssignedWorker
-//				if err := execRows.Scan(&ex.EmployeeID, &ex.ActualMinutes, &ex.ActualValue); err != nil {
-//					slog.Warn("failed to scan executor", "op", op, "err", err)
-//					continue
-//				}
-//				oper.AssignedWorkers = append(oper.AssignedWorkers, ex)
-//			}
-//		}
-//
-//		// Заглушка для пустых исполнителей
-//		if len(oper.AssignedWorkers) == 0 {
-//			oper.AssignedWorkers = []storage.AssignedWorker{
-//				{
-//					EmployeeID:    0,
-//					ActualMinutes: oper.Minutes,
-//					ActualValue:   oper.Value,
-//				},
-//			}
-//		}
-//
-//		detail.Operations = append(detail.Operations, oper)
-//	}
-//
-//	var totalTime float64
-//	for _, oper := range detail.Operations {
-//		totalTime += oper.Value
-//	}
-//	detail.TotalTime = totalTime
-//
-//	if err := opsRows.Err(); err != nil {
-//		return nil, fmt.Errorf("%s: iteration error: %w", op, err)
-//	}
-//
-//	tx, err := s.db.BeginTx(ctx, nil)
-//	if err != nil {
-//		return nil, fmt.Errorf("%s: begin tx: %w", op, err)
-//	}
-//
-//	// Получаем или создаем запись в dem_product_instances_al
-//	internalID, err := s.GetOrCreateMosquitoInstance(ctx, tx, detail.OrderNum, detail.Name, totalTime, detail.Count, detail.Sqr)
-//	if err != nil {
-//		tx.Rollback()
-//		return nil, fmt.Errorf("%s: get/create anchor: %w", op, err)
-//	}
-//
-//	// Коммитим создание якоря сразу, чтобы он стал виден другим транзакциям
-//	if err := tx.Commit(); err != nil {
-//		return nil, fmt.Errorf("%s: commit anchor: %w", op, err)
-//	}
-//
-//	detail.ID = internalID
-//
-//	fmt.Println(detail)
-//
-//	return []*storage.GetOrderDetails{&detail}, nil
-//}
+func (s *Storage) GetNormOrderVitrage(ctx context.Context, id int64) ([]storage.GetWorkersVitrage, error) {
+	const op = "storage.mysql.GetNormOrderVitrage"
+
+	stmt := `SELECT employee_id, COALESCE(notes, '') as notes FROM dem_operation_executors_al WHERE product_id = ? AND operation_name = 'Витраж' ORDER BY employee_id`
+
+	rows, err := s.db.QueryContext(ctx, stmt, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: ошибка запроса назначений для product_id=%d: %w", op, id, err)
+	}
+	defer rows.Close()
+
+	var result []storage.GetWorkersVitrage
+	for rows.Next() {
+		var ex storage.GetWorkersVitrage
+		err := rows.Scan(&ex.ID, &ex.Notes)
+		if err != nil {
+			return nil, fmt.Errorf("%s: ошибка сканирования: %w", op, err)
+		}
+
+		result = append(result, ex)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%s: итерация строк: %w", op, err)
+	}
+
+	if result == nil {
+		result = []storage.GetWorkersVitrage{}
+	}
+
+	return result, nil
+}

@@ -3,7 +3,6 @@ package mysql
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
 	"log/slog"
@@ -155,9 +154,9 @@ func (s *Storage) importGutterFromLegacy(ctx context.Context, legacyID int64, or
 		for tRows.Next() {
 			var mat, cnt int
 			if err := tRows.Scan(&mat, &cnt); err == nil {
-				if mat == 5 || mat == 8 { // Оцинковка
+				if mat == 5 || mat == 8 {
 					typeCounts["ocn"] += cnt
-				} else if mat == 1 { // Водоотлив
+				} else if mat == 1 {
 					typeCounts["vo"] += cnt
 				}
 			}
@@ -420,9 +419,10 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 		customerName = "" // Если не нашли, пусть будет пусто
 	}
 
-	paramsMap := map[string]float64{"a": a, "b": b, "c": c, "d": d}
-	paramsJSON, _ := json.Marshal(paramsMap)
-	paramsStr := string(paramsJSON)
+	// TODO в будущем для обновления и предзаполнения данными
+	//paramsMap := map[string]float64{"a": a, "b": b, "c": c, "d": d}
+	//paramsJSON, _ := json.Marshal(paramsMap)
+	//paramsStr := string(paramsJSON)
 
 	// Считаем общее время
 	var totalTime float64
@@ -450,13 +450,14 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 
 	if existingID > 0 {
 		// Обновляем существующий
+		// systema = ? добавить (выше туду)
 		_, err = tx.ExecContext(ctx,
-			`UPDATE dem_product_instances_al SET total_time = ?, customer = ?, count = ?, sqr = ?, systema = ? WHERE id = ?`,
+			`UPDATE dem_product_instances_al SET total_time = ?, customer = ?, count = ?, sqr = ? WHERE id = ?`,
 			totalTime,
 			customerName,
 			count,
 			sqr,
-			paramsStr,
+			//paramsStr,
 			existingID,
 		)
 		if err != nil {
@@ -472,13 +473,14 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 		newItem.ID = existingID
 	} else {
 		// Создаем новый
+		// systema перед profile и добавить ?
 		res, err := tx.ExecContext(ctx, `
 			INSERT INTO dem_product_instances_al (
 				order_num, template_code, name, customer, count, total_time,
-				type, part_type, parent_assembly, status, position, sqr, type_izd, systema, profile
+				type, part_type, parent_assembly, status, position, sqr, type_izd, profile
 			) VALUES (
 				?, '0', 'Водоотлив', ?, ?, ?,
-				'vodootliv', 'main', '', ?, 0, ?, 'vo', ?, ''
+				'vodootliv', 'main', '', ?, 0, ?, 'vo', ''
 			)
 		`,
 			orderNum,
@@ -487,7 +489,7 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 			totalTime,
 			&status,
 			sqr,
-			paramsStr,
+			//paramsStr,
 		)
 
 		if err != nil {
@@ -497,11 +499,8 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 		newItem.ID = id
 	}
 
-	fmt.Println("IDDDDDDDD", newItem.ID)
-
 	// Вставляем новые операции
 	for i, dop := range operations {
-		fmt.Println(dop.Name, dop.Label, dop.Value)
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO dem_operation_values_al (product_id, operation_name, operation_label, count, value, minutes, sort_operation)
 			VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -524,7 +523,6 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 	newItem.Count = count
 	newItem.Sqr = sqr
 
-	fmt.Println(newItem)
 	return &newItem, nil
 }
 
@@ -558,7 +556,8 @@ func (s *Storage) GetNashchelnikRawData(ctx context.Context, legacyID int64) (*s
 	}
 
 	data.Sqr = math.Round((sqr/1000000.0)*1000) / 1000
-	data.Pgm = math.Round(pgm / 1000.0)
+	//data.Pgm = math.Round(pgm / 1000.0)
+	data.Pgm = pgm
 	data.Count = count
 
 	// 2. Получаем операции ИЗ ЛЕГАСИ, НО БЕЗ ГИБА И ОТБОРТОВКИ

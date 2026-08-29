@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"vue-golang/internal/storage"
 )
 
@@ -16,8 +15,10 @@ func (s *Storage) GetAllWorkers(ctx context.Context, typeIzd string) ([]storage.
 		"door":   "windows",
 		"glyhar": "windows",
 
-		"vitrage": "vitrages",
-		"loggia":  "vitrages",
+		"vitrage":   "vitrages",
+		"loggia":    "loggia",
+		"mosquito":  "mosquito",
+		"vodootliv": "vodootliv",
 	}
 
 	baseQuery := `SELECT DISTINCT e.id, e.name FROM dem_employees_al e`
@@ -64,59 +65,6 @@ func (s *Storage) GetAllWorkers(ctx context.Context, typeIzd string) ([]storage.
 	return workers, nil
 }
 
-// Storage: GetWorkersForReport
-func (s *Storage) GetWorkersForReport(ctx context.Context, productIDs []int64) ([]storage.GetWorkers, error) {
-	const op = "storage.mysql.GetWorkersForReport"
-
-	// Если нет продуктов — возвращаем всех активных (fallback)
-	if len(productIDs) == 0 {
-		return s.GetAllWorkers(ctx, "")
-	}
-
-	// Запрос: сотрудники, которые реально работали в этих продуктах + все активные (UNION)
-	query := `
-        SELECT DISTINCT e.id, e.name 
-        FROM dem_employees_al e
-        WHERE e.is_active = TRUE
-        AND (
-            -- Вариант А: только те, у кого есть факт в выбранных продуктах
-            e.id IN (
-                SELECT DISTINCT employee_id 
-                FROM dem_operation_executors_al 
-                WHERE product_id IN (?)
-            )
-            -- Вариант Б (раскомментировать, если нужно показывать всех для новых назначений):
-            -- OR e.id IN (SELECT id FROM dem_employees_al WHERE is_active = TRUE)
-        )
-        ORDER BY e.name ASC
-    `
-
-	// Для IN (?) с динамическим количеством
-	query = strings.Replace(query, "(?)", "("+placeholders(len(productIDs))+")", 1)
-
-	args := make([]interface{}, len(productIDs))
-	for i, id := range productIDs {
-		args[i] = id
-	}
-
-	var workers []storage.GetWorkers
-	rows, err := s.db.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var w storage.GetWorkers
-		if err := rows.Scan(&w.ID, &w.Name); err != nil {
-			return nil, fmt.Errorf("%s: scan: %w", op, err)
-		}
-		workers = append(workers, w)
-	}
-
-	return workers, rows.Err()
-}
-
 func (s *Storage) SaveOperationWorkers(ctx context.Context, req storage.SaveWorkers) error {
 	const op = "storage.mysql.SaveOperationWorkers"
 
@@ -126,7 +74,6 @@ func (s *Storage) SaveOperationWorkers(ctx context.Context, req storage.SaveWork
 	}
 	defer tx.Rollback()
 
-	// удаляем корень + дети
 	_, err = tx.ExecContext(ctx, `
 		DELETE FROM dem_operation_executors_al
 		WHERE product_id = ? 
@@ -204,3 +151,52 @@ func (s *Storage) SaveReadyDate(ctx context.Context, tx *sql.Tx, rootProductID i
 
 	return nil
 }
+
+//func (s *Storage) GetWorkersForReport(ctx context.Context, productIDs []int64) ([]storage.GetWorkers, error) {
+//	const op = "storage.mysql.GetWorkersForReport"
+//
+//	// Если нет продуктов — возвращаем всех активных (fallback)
+//	if len(productIDs) == 0 {
+//		return s.GetAllWorkers(ctx, "")
+//	}
+//
+//	// Запрос: сотрудники, которые реально работали в этих продуктах + все активные (UNION)
+//	query := `
+//        SELECT DISTINCT e.id, e.name
+//        FROM dem_employees_al e
+//        WHERE e.is_active = TRUE
+//        AND (
+//            e.id IN (
+//                SELECT DISTINCT employee_id
+//                FROM dem_operation_executors_al
+//                WHERE product_id IN (?)
+//            )
+//        )
+//        ORDER BY e.name ASC
+//    `
+//
+//	// Для IN (?) с динамическим количеством
+//	query = strings.Replace(query, "(?)", "("+placeholders(len(productIDs))+")", 1)
+//
+//	args := make([]interface{}, len(productIDs))
+//	for i, id := range productIDs {
+//		args[i] = id
+//	}
+//
+//	var workers []storage.GetWorkers
+//	rows, err := s.db.QueryContext(ctx, query, args...)
+//	if err != nil {
+//		return nil, fmt.Errorf("%s: %w", op, err)
+//	}
+//	defer rows.Close()
+//
+//	for rows.Next() {
+//		var w storage.GetWorkers
+//		if err := rows.Scan(&w.ID, &w.Name); err != nil {
+//			return nil, fmt.Errorf("%s: scan: %w", op, err)
+//		}
+//		workers = append(workers, w)
+//	}
+//
+//	return workers, rows.Err()
+//}

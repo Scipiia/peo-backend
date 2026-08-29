@@ -38,7 +38,7 @@ type PEOProduct struct {
 	ID              int64      `json:"id"`
 	OrderNum        string     `json:"order_num"`
 	Customer        string     `json:"customer"`
-	TotalTime       float64    `json:"total_time"` // "площадь"
+	TotalTime       float64    `json:"total_time"`
 	CreatedAt       time.Time  `json:"created_at"`
 	Status          string     `json:"status"`
 	PartType        string     `json:"part_type"`
@@ -57,6 +57,7 @@ type PEOProduct struct {
 	ReadyDate       *time.Time `json:"ready_date"`
 	Coefficient     *float64   `json:"coefficient"`
 	Name            string     `json:"name"`
+	SqrStv          *float64   `json:"sqr_stv"`
 
 	// Мапа: employee_id → суммарные минуты
 	EmployeeMinutes map[int64]float64 `json:"employee_minutes"`

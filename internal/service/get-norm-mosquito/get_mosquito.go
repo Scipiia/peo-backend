@@ -27,7 +27,7 @@ func (s *MosquitoService) Sync(ctx context.Context, since time.Time) error {
 		return fmt.Errorf("ошибка получения москиток в сервисе %w", err)
 	}
 
-	slog.Info("orders count ", len(orders))
+	//slog.Info("orders count ", len(orders))
 	//externalID := "moskit_КП-123_4"
 
 	for _, order := range orders {

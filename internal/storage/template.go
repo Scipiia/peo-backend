@@ -15,14 +15,17 @@ type Template struct {
 }
 
 type Operation struct {
-	Name     string  `json:"name"`
-	Type     string  `json:"type"`
-	Count    float64 `json:"count"`
-	Label    string  `json:"label"`
-	Value    float64 `json:"value"`
-	Minutes  float64 `json:"minutes"`
-	Required bool    `json:"required"`
-	Group    string  `json:"group"`
+	Name      string   `json:"name"`
+	Type      string   `json:"type"`
+	Count     float64  `json:"count"`
+	Label     string   `json:"label"`
+	Value     float64  `json:"value"`
+	Minutes   float64  `json:"minutes"`
+	Required  bool     `json:"required"`
+	Group     string   `json:"group"`
+	Formula   *string  `json:"formula,omitempty"`
+	DependsOn []string `json:"depends_on,omitempty"`
+	ShowCalc  bool     `json:"show_calc"`
 }
 
 type Rule struct {
