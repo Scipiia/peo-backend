@@ -3,20 +3,20 @@ package config
 import (
 	"github.com/ilyakaznacheev/cleanenv"
 	"log"
+	"os"
 	"time"
 )
 
 type Config struct {
-	Env         string `yaml:"env" env-default:"prod"`
-	StoragePath string `yaml:"storage_path" env-required:"true"`
-	HTTPServer  `yaml:"http_server"`
-	DBUser      string `yaml:"db_user" env-required:"true"`
-	DBPassword  string `yaml:"db_password" env-required:"false"`
-	DBHost      string `yaml:"db_host" env-default:"localhost"`
-	DBPort      int    `yaml:"db_port" env-default:"3306"`
-	DBName      string `yaml:"db_name" env-required:"true"`
-	ParseTime   bool   `yaml:"parse_time" env-required:"true"`
-	Charset     string `yaml:"charset"`
+	Env        string `yaml:"env" env-default:"prod"`
+	HTTPServer `yaml:"http_server"`
+	DBUser     string `yaml:"db_user" env-required:"true"`
+	DBPassword string `yaml:"db_password" env-required:"false"`
+	DBHost     string `yaml:"db_host" env-default:"localhost"`
+	DBPort     int    `yaml:"db_port" env-default:"3306"`
+	DBName     string `yaml:"db_name" env-required:"true"`
+	ParseTime  bool   `yaml:"parse_time" env-required:"true"`
+	Charset    string `yaml:"charset"`
 
 	AdminLogin string `yaml:"admin_login"`
 	AdminPass  string `yaml:"admin_pass"`
@@ -42,11 +42,18 @@ func MustConfig() *Config {
 	//}
 
 	var cfg Config
-	a := "./config/local.yaml"
+	//a := "./config/local.yaml"
 
-	if err := cleanenv.ReadConfig(a, &cfg); err != nil {
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		configPath = "./config/local.yaml"
+	}
+
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		log.Fatalf("cannot read config: %s", err)
 	}
+
+	//fmt.Println(cfg)
 
 	return &cfg
 }

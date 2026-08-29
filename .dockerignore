@@ -1,0 +1,14 @@
+.git
+.gitignore
+
+covarage
+errors.log
+
+backend-linux
+norm-service
+
+*.test
+
+node_modules
+frontend/src
+frontend/node_modules

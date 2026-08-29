@@ -1,0 +1,59 @@
+services:
+  mysql:
+    image: mysql:8.0.46
+
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: aaaa
+      MYSQL_USER: valera
+      MYSQL_PASSWORD: pass
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./migrations:/migrations
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    command:
+      - "-path"
+      - "/migrations"
+      - "-database"
+      - "mysql://valera:pass@tcp(mysql:3306)/aaaa"
+      - "up"
+
+  backend:
+    build: .
+
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+
+    volumes:
+      - ./config:/app/config
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+
+volumes:
+  mysql-data:
