@@ -141,7 +141,7 @@ func (s *Storage) GetNormOrders(ctx context.Context, orderNum, orderType string)
         	AND dem_product_instances_al.type = 'mosquito'
         	AND dem_product_instances_al.part_type = 'main')
 		ORDER BY date DESC
-		LIMIT 50`
+		LIMIT 25`
 
 		rowsMoskit, err := s.db.QueryContext(ctx, stmtMoskit, orderNum, orderNum)
 

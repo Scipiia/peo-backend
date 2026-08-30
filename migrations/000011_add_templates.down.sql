@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS dem_templates_al;

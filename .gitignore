@@ -1,5 +1,9 @@
 .env
 config/*.yaml
 !config/example.yaml
+!.env.example
 errors.log
 vendor/
+.idea/
+*.log
+tmp/

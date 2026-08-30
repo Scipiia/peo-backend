@@ -1,20 +1,11 @@
-package migrate
+package migration
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/mysql"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
-
-type Migrator struct {
-	db *sql.DB
-}
-
-func New(db *sql.DB) *Migrator {
-	return &Migrator{
-		db: db,
-	}
-}
 
 func Up(path string, dsn string) error {
 
@@ -32,7 +23,13 @@ func Up(path string, dsn string) error {
 	err = m.Up()
 
 	if err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("apply migrations: %w", err)
+		return fmt.Errorf("apply migration: %w", err)
+	}
+
+	version, dirty, err := m.Version()
+
+	if err == nil {
+		fmt.Printf("migration version: %d dirty: %v\n", version, dirty)
 	}
 
 	return nil

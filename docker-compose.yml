@@ -23,23 +23,29 @@ services:
       - mysql-data:/var/lib/mysql
 
   migrate:
-    image: migrate/migrate
+    build: .
+
+    env_file:
+      - .env
+
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+
     volumes:
-      - ./migrations:/migrations
+      - ./config:/app/config
+      - ./migrations:/app/migrations
+
+    command: ["./migrate"]
 
     depends_on:
       mysql:
         condition: service_healthy
 
-    command:
-      - "-path"
-      - "/migrations"
-      - "-database"
-      - "mysql://valera:pass@tcp(mysql:3306)/aaaa"
-      - "up"
-
   backend:
     build: .
+
+    env_file:
+      - .env
 
     environment:
       CONFIG_PATH: /app/config/docker.yaml
@@ -50,10 +56,17 @@ services:
     ports:
       - "8080:8080"
 
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
     depends_on:
       mysql:
         condition: service_healthy
-
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   mysql-data:

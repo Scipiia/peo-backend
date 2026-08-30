@@ -92,14 +92,14 @@ Source drivers read migrations from local or remote sources. [Add a new source?]
 ### Basic usage
 
 ```bash
-$ migrate -source file://path/to/migrations -database postgres://localhost:5432/database up 2
+$ migration -source file://path/to/migration -database postgres://localhost:5432/database up 2
 ```
 
 ### Docker usage
 
 ```bash
-$ docker run -v {{ migration dir }}:/migrations --network host migrate/migrate
-    -path=/migrations/ -database postgres://localhost:5432/database up 2
+$ docker run -v {{ migration dir }}:/migration --network host migration/migration
+    -path=/migration/ -database postgres://localhost:5432/database up 2
 ```
 
 ## Use in your Go project
@@ -115,9 +115,9 @@ __[Go Documentation](https://pkg.go.dev/github.com/golang-migrate/migrate/v4)__
 
 ```go
 import (
-    "github.com/golang-migrate/migrate/v4"
-    _ "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/github"
+    "github.com/golang-migration/migration/v4"
+    _ "github.com/golang-migration/migration/v4/database/postgres"
+    _ "github.com/golang-migration/migration/v4/source/github"
 )
 
 func main() {
@@ -134,18 +134,18 @@ Want to use an existing database client?
 import (
     "database/sql"
     _ "github.com/lib/pq"
-    "github.com/golang-migrate/migrate/v4"
-    "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/file"
+    "github.com/golang-migration/migration/v4"
+    "github.com/golang-migration/migration/v4/database/postgres"
+    _ "github.com/golang-migration/migration/v4/source/file"
 )
 
 func main() {
     db, err := sql.Open("postgres", "postgres://localhost:5432/database?sslmode=enable")
     driver, err := postgres.WithInstance(db, &postgres.Config{})
     m, err := migrate.NewWithDatabaseInstance(
-        "file:///migrations",
+        "file:///migration",
         "postgres", driver)
-    m.Up() // or m.Steps(2) if you want to explicitly set the number of migrations to run
+    m.Up() // or m.Steps(2) if you want to explicitly set the number of migration to run
 }
 ```
 

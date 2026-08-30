@@ -9,6 +9,8 @@ import (
 	upadmincoef "vue-golang/http-server/admin/update"
 	authLDAP "vue-golang/http-server/auth"
 	generate_excel "vue-golang/http-server/generate-report/generate-excel"
+	get_health "vue-golang/http-server/health/get"
+	"vue-golang/http-server/health/ready"
 	getmaterials "vue-golang/http-server/materials/get"
 	getorder "vue-golang/http-server/order-dem/get"
 	"vue-golang/http-server/order-norm/get"
@@ -26,11 +28,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/cors"
 )
-
-//type Service interface {
-//	recalculate.NormService
-//	generate_excel.GenerateExcel
-//}
 
 func routes(app *App) *chi.Mux {
 	router := chi.NewRouter()
@@ -64,7 +61,6 @@ func routes(app *App) *chi.Mux {
 	//TODO массив со всеми заказами из дема
 	router.Get("/api/orders", getorder.GetOrdersFilter(app.Log, app.Storage))
 
-	// Маршруты для Гловяка где он внесет все данные по заказу
 	router.Get("/api/orders/order/{orderNum}", getorder.GetOrderDetails(app.Log, app.Storage))
 
 	//TODO получение шаблонов
@@ -150,12 +146,6 @@ func routes(app *App) *chi.Mux {
 	router.Handle("/img/*", fileServer)
 	//router.Handle("/favicon.ico", fileServer)
 
-	// router.With(auth.BasicAuth(app.Config.AdminLogin, app.Config.AdminPass)).Handle("/admin/*",
-	// 	http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 		http.ServeFile(w, r, filepath.Join("./frontend-dist", "index.html"))
-	// 	}),
-	// )
-
 	router.Handle("/admin/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, filepath.Join("./frontend-dist", "index.html"))
 	}))
@@ -171,6 +161,9 @@ func routes(app *App) *chi.Mux {
 		// Иначе — SPA
 		http.ServeFile(w, r, filepath.Join(frontendDir, "index.html"))
 	})
+
+	router.Get("/health", get_health.Health(app.Log))
+	router.Get("/ready", ready.Ready(app.Log, app.Storage))
 
 	return router
 }

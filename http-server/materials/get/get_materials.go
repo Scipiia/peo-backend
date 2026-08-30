@@ -18,22 +18,6 @@ func GetMaterials(log *slog.Logger, material MaterialProvider) http.HandlerFunc 
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.materials.GetMaterials"
 
-		//idStr := r.URL.Query().Get("id")
-		//positionStr := r.URL.Query().Get("position")
-		//
-		//id, err := strconv.Atoi(idStr)
-		//if err != nil {
-		//	log.Error("Invalid id", slog.String("error", err.Error()))
-		//	http.Error(w, "Invalid id", http.StatusBadRequest)
-		//	return
-		//}
-		//
-		//position, err := strconv.Atoi(positionStr)
-		//if err != nil {
-		//	log.Error("Invalid position", slog.String("error", err.Error()))
-		//	http.Error(w, "Invalid position", http.StatusBadRequest)
-		//	return
-		//}
 		var req struct {
 			OrderNum     string `json:"order_num"`
 			Position     int    `json:"position"`

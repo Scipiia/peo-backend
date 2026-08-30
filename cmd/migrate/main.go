@@ -1,16 +1,19 @@
-package migrate
+package main
 
 import (
 	"log"
 	"vue-golang/internal/config"
-	"vue-golang/internal/migrate"
+	"vue-golang/internal/migration"
 	"vue-golang/internal/storage/mysql"
 )
 
 func main() {
 	cfg := config.MustConfig()
 
-	err := migrate.Up("migrations", mysql.MigrateDSN(*cfg))
+	log.Println("start migration")
+
+	//err := migration.Up("./migrations", mysql.MigrateDSN(*cfg))
+	err := migration.Up(cfg.MigrationPath, mysql.MigrateDSN(*cfg))
 	if err != nil {
 		log.Fatal(err)
 	}

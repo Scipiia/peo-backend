@@ -5,6 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 	auth_ldap "vue-golang/internal/auth-ldap"
 	"vue-golang/internal/config"
 	generate_excel "vue-golang/internal/service/generate-excel"
@@ -38,9 +41,6 @@ type App struct {
 func main() {
 	cfg := config.MustConfig()
 
-	//slog.Any("Configggg", cfg)
-	//fmt.Println("CFFFFGG", cfg)
-
 	log := setupLogger(cfg.Env)
 
 	storage, err := mysql.New(*cfg)
@@ -57,8 +57,6 @@ func main() {
 	recalculateService := recalculate.NewNormService(storage)
 	generateExcelService := generate_excel.NewGenerateService(storage)
 	//mosquitoService := get_norm_mosquito.NewMosquitoService(storage)
-
-	log.Info("server started", slog.String("address", cfg.Address))
 
 	app := &App{
 		Config:  cfg,
@@ -82,12 +80,43 @@ func main() {
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
 
-	err = srv.ListenAndServe()
-	if err != nil {
-		log.Error("failed start server ", slog.Any("err", err))
+	go func() {
+		log.Info("server started", slog.String("address", cfg.Address))
+
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Error("failed start server", slog.Any("err", err))
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+
+	log.Info("server shutting down")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("server shutdown failed", slog.Any("err", err))
 	}
 
-	log.Error("server stopped")
+	log.Info("closing database")
+
+	if err := storage.Close(); err != nil {
+		log.Error("failed to close database", slog.Any("err", err))
+	}
+
+	log.Info("Server stopped")
+
+	//err = srv.ListenAndServe()
+	//if err != nil {
+	//	log.Error("failed start server ", slog.Any("err", err))
+	//}
+
+	//log.Error("server stopped")
 }
 
 type dualHandler struct {

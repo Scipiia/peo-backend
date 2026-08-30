@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"time"
@@ -9,18 +10,19 @@ import (
 )
 
 type Config struct {
-	Env        string `yaml:"env" env-default:"prod"`
-	HTTPServer `yaml:"http_server"`
-	DBUser     string `yaml:"db_user" env-required:"true"`
-	DBPassword string `yaml:"db_password" env-required:"false"`
-	DBHost     string `yaml:"db_host" env-default:"localhost"`
-	DBPort     int    `yaml:"db_port" env-default:"3306"`
-	DBName     string `yaml:"db_name" env-required:"true"`
-	ParseTime  bool   `yaml:"parse_time" env-required:"true"`
-	Charset    string `yaml:"charset"`
+	Env           string `yaml:"env" env-default:"prod"`
+	HTTPServer    `yaml:"http_server"`
+	DBUser        string `env:"DB_USER"`
+	DBPassword    string `env:"DB_PASSWORD"`
+	DBHost        string `env:"DB_HOST"`
+	DBPort        int    `env:"DB_PORT"`
+	DBName        string `env:"DB_NAME"`
+	ParseTime     bool   `yaml:"parse_time"`
+	Charset       string `yaml:"charset"`
+	MigrationPath string `yaml:"migration_path" env:"MIGRATION_PATH"`
 
-	AdminLogin string `yaml:"admin_login"`
-	AdminPass  string `yaml:"admin_pass"`
+	AdminLogin string `yaml:"admin_login" env:"ADMIN_LOGIN"`
+	AdminPass  string `yaml:"admin_pass" env:"ADMIN_PASS"`
 
 	LDAPConfig `yaml:"ldap"`
 	JWTConfig  `yaml:"jwt"`
@@ -32,8 +34,6 @@ type HTTPServer struct {
 	Address     string        `yaml:"address" env-default:"localhost:4001"`
 	Timeout     time.Duration `yaml:"timeout"  env-default:"4s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout"  env-default:"60s"`
-	//User        string        `yaml:"user" env-required:"true"`
-	//Password    string        `yaml:"password" env-required:"true"`
 }
 
 type LDAPConfig struct {
@@ -48,7 +48,7 @@ type LDAPConfig struct {
 }
 
 type JWTConfig struct {
-	Secret          string `yaml:"secret"`
+	Secret          string `yaml:"secret" env:"JWT_SECRET"`
 	ExpirationHours int    `yaml:"expiration_hours"`
 }
 
@@ -58,29 +58,27 @@ type AuthConfig struct {
 }
 
 func MustConfig() *Config {
-	//configPath := os.Getenv("CONFIG_PATH")
-	//if configPath == "" {
-	//	log.Fatal("CONFIG_PATH is not set")
-	//}
-	////log.Println(configPath)
-	//
-	//if _, err := os.Stat(configPath); os.IsNotExist(err) {
-	//	log.Fatalf("config file does not exist: %s", configPath)
-	//}
 
 	var cfg Config
-	//a := "./config/local.yaml"
 
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		configPath = "./config/local.yaml"
 	}
 
+	if err := godotenv.Load(); err != nil {
+		log.Println("godotenv:", err)
+	}
+
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		log.Fatalf("cannot read config: %s", err)
 	}
 
-	//fmt.Println(cfg)
+	if err := cleanenv.ReadEnv(&cfg); err != nil {
+		log.Fatalf("cannot read env: %s", err)
+	}
+
+	log.Printf("config loaded: env=%s db_host=%s db_name=%s http=%s", cfg.Env, cfg.DBHost, cfg.DBName, cfg.HTTPServer.Address)
 
 	return &cfg
 }

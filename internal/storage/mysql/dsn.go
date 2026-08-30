@@ -19,7 +19,7 @@ func DSN(cfg config.Config) string {
 
 func MigrateDSN(cfg config.Config) string {
 	return fmt.Sprintf(
-		"mysql://%s:%s@tcp(%s:%d)/%s",
+		"%s:%s@tcp(%s:%d)/%s",
 		cfg.DBUser,
 		cfg.DBPassword,
 		cfg.DBHost,
