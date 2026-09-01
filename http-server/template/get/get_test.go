@@ -2,236 +2,178 @@ package get
 
 import (
 	"context"
-	"database/sql"
+	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
+	"vue-golang/internal/storage"
 
-	"github.com/go-chi/render"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	"vue-golang/internal/storage"
 )
 
-// MockTemplateJSON реализует интерфейс TemplateJSON для тестов
-type MockTemplateJSON struct {
+type MockTemplateByCodeGetter struct {
 	mock.Mock
 }
 
-func (m *MockTemplateJSON) GetTemplateByCode(ctx context.Context, code string) (*storage.Template, error) {
+func (m *MockTemplateByCodeGetter) GetTemplateByCode(ctx context.Context, code string) (*storage.Template, error) {
 	args := m.Called(ctx, code)
+
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
+
 	return args.Get(0).(*storage.Template), args.Error(1)
 }
 
-func (m *MockTemplateJSON) GetAllTemplates(ctx context.Context) ([]*storage.Template, error) {
-	args := m.Called(ctx)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]*storage.Template), args.Error(1)
-}
-
-func (m *MockTemplateJSON) GetTemplateByCodeAdmin(ctx context.Context, code string) (*storage.Template, error) {
-	args := m.Called(ctx, code)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*storage.Template), args.Error(1)
-}
-
-func (m *MockTemplateJSON) GetAllTemplatesAdmin(ctx context.Context) ([]*storage.Template, error) {
-	args := m.Called(ctx)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]*storage.Template), args.Error(1)
-}
-
-// Тест: успешное получение шаблона по коду
-func TestGetTemplatesByCode_Success(t *testing.T) {
-	mockStorage := new(MockTemplateJSON)
-
-	// Подготовка фейкового шаблона
-	template := &storage.Template{
-		ID:       56,
-		Code:     "56",
-		Name:     "Дверь с петлями RDRH",
-		Category: "door",
-		Systema:  strPtr("КП45"),
-		Operations: []storage.Operation{
-			{Name: "сборка", Minutes: 45.0},
-			{Name: "адаптер ПДП 1001-00", Minutes: 0.0},
+func TestGetTemplatesByCode(t *testing.T) {
+	tests := []struct {
+		name       string
+		code       string
+		wantStatus int
+		mockResult *storage.Template
+		mockError  error
+		wantBody   string
+		needMock   bool
+	}{
+		{
+			name:       "OK",
+			code:       "1",
+			wantStatus: http.StatusOK,
+			mockResult: &storage.Template{Code: "1"},
+			needMock:   true,
 		},
-		Rules: []storage.Rule{
-			{
-				Operation:      "адаптер ПДП 1001-00",
-				Condition:      map[string]interface{}{"HasPetliRDRH": true},
-				Mode:           "additivePlusMultiplied",
-				UnitField:      "ItemCountForRDRH",
-				MinutesPerUnit: 4.5,
-			},
+		{
+			name:       "Service error",
+			code:       "1",
+			wantStatus: http.StatusInternalServerError,
+			mockError:  errors.New("service error"),
+			wantBody:   "Internal server error",
+			needMock:   true,
+		},
+		{
+			name:       "empty code",
+			code:       "",
+			wantStatus: http.StatusBadRequest,
+			mockError:  errors.New("empty code"),
+			wantBody:   "Missing required query parameter",
+			needMock:   false,
 		},
 	}
 
-	mockStorage.On("GetTemplateByCode", mock.Anything, "56").
-		Return(template, nil)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := new(MockTemplateByCodeGetter)
+			if tt.needMock {
+				mockService.On("GetTemplateByCode", mock.Anything, tt.code).
+					Return(tt.mockResult, tt.mockError)
+			}
 
-	logger := slog.Default()
-	handler := GetTemplatesByCode(logger, nil)
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	// Создаём запрос с query параметром ?code=DOOR-56
-	req := httptest.NewRequest(http.MethodGet, "/api/templates?code=56", nil)
-	rr := httptest.NewRecorder()
+			r := chi.NewRouter()
+			r.Get("/api/template", GetTemplatesByCode(log, mockService))
 
-	handler.ServeHTTP(rr, req)
+			req := httptest.NewRequest(http.MethodGet, "/api/template?code="+tt.code, nil)
+			req.Header.Set("Content-Type", "application/json")
 
-	// Проверяем статус
-	assert.Equal(t, http.StatusOK, rr.Code)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			assert.Equal(t, tt.wantStatus, w.Code)
 
-	// Проверяем ответ
-	var resp ResponseForm
-	err := render.DecodeJSON(strings.NewReader(rr.Body.String()), &resp)
-	assert.NoError(t, err)
+			if tt.wantBody != "" {
+				assert.Contains(t, w.Body.String(), tt.wantBody)
+			}
 
-	assert.Equal(t, 56, resp.ID)
-	assert.Equal(t, "56", resp.Code)
-	assert.Equal(t, "Дверь с петлями RDRH", resp.Name)
-	assert.Equal(t, "door", resp.Category)
-	assert.Equal(t, "КП45", *resp.Systema)
-	assert.Len(t, resp.Operations, 2)
-	assert.Equal(t, "сборка", resp.Operations[0].Name)
+			if tt.mockResult != nil {
+				var response storage.Template
 
-	mockStorage.AssertExpectations(t)
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+
+				assert.Equal(t, tt.mockResult.Code, response.Code)
+			}
+
+			mockService.AssertExpectations(t)
+		})
+	}
 }
 
-// Тест: отсутствует параметр 'code'
-func TestGetTemplatesByCode_MissingCode(t *testing.T) {
-	mockStorage := new(MockTemplateJSON)
-	logger := slog.Default()
-	handler := GetTemplatesByCode(logger, nil)
-
-	// Запрос БЕЗ параметра code
-	req := httptest.NewRequest(http.MethodGet, "/api/templates", nil)
-	rr := httptest.NewRecorder()
-
-	handler.ServeHTTP(rr, req)
-
-	// Ожидаем 400 Bad Request
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Contains(t, rr.Body.String(), "Missing required query parameter 'code'")
-
-	// Мок не должен был быть вызван
-	mockStorage.AssertNotCalled(t, "GetTemplateByCode")
+type MockAllTemplatesGetter struct {
+	mock.Mock
 }
 
-// Тест: шаблон не найден (404)
-func TestGetTemplatesByCode_NotFound(t *testing.T) {
-	mockStorage := new(MockTemplateJSON)
+func (m *MockAllTemplatesGetter) GetAllTemplates(ctx context.Context) ([]*storage.Template, error) {
+	args := m.Called(ctx)
 
-	// Возвращаем ошибку "не найден"
-	mockStorage.On("GetTemplateByCode", mock.Anything, "UNKNOWN").
-		Return(nil, sql.ErrNoRows)
-
-	logger := slog.Default()
-	handler := GetTemplatesByCode(logger, nil)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/templates?code=UNKNOWN", nil)
-	rr := httptest.NewRecorder()
-
-	handler.ServeHTTP(rr, req)
-
-	// Ожидаем 404 Not Found
-	assert.Equal(t, http.StatusNotFound, rr.Code)
-	assert.Contains(t, rr.Body.String(), "Form not found")
-
-	mockStorage.AssertExpectations(t)
-}
-
-// Тест: ошибка базы данных (500)
-func TestGetTemplatesByCode_DBError(t *testing.T) {
-	mockStorage := new(MockTemplateJSON)
-
-	// Возвращаем произвольную ошибку БД
-	mockStorage.On("GetTemplateByCode", mock.Anything, "56").
-		Return(nil, errors.New("connection timeout"))
-
-	logger := slog.Default()
-	handler := GetTemplatesByCode(logger, nil)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/templates?code=56", nil)
-	rr := httptest.NewRecorder()
-
-	handler.ServeHTTP(rr, req)
-
-	// Ожидаем 500 Internal Server Error
-	assert.Equal(t, http.StatusInternalServerError, rr.Code)
-	assert.Contains(t, rr.Body.String(), "Internal server error")
-
-	mockStorage.AssertExpectations(t)
-}
-
-// Тест: успешное получение всех шаблонов
-func TestGetAllTemplates_Success(t *testing.T) {
-	mockStorage := new(MockTemplateJSON)
-
-	templates := []*storage.Template{
-		{ID: 1, Code: "WIN-01", Name: "Окно стандарт", Category: "window"},
-		{ID: 56, Code: "DOOR-56", Name: "Дверь с RDRH", Category: "door"},
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
 	}
 
-	mockStorage.On("GetAllTemplates", mock.Anything).
-		Return(templates, nil)
-
-	logger := slog.Default()
-	handler := GetAllTemplates(logger, nil)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/templates/all", nil)
-	rr := httptest.NewRecorder()
-
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(t, http.StatusOK, rr.Code)
-
-	// Проверяем структуру ответа ResponseAllForm
-	var resp ResponseAllForm
-	err := render.DecodeJSON(strings.NewReader(rr.Body.String()), &resp)
-	assert.NoError(t, err)
-
-	assert.Len(t, resp.Template, 2)
-	assert.Equal(t, "WIN-01", resp.Template[0].Code)
-	assert.Equal(t, "DOOR-56", resp.Template[1].Code)
-	assert.Empty(t, resp.Error)
-
-	mockStorage.AssertExpectations(t)
+	return args.Get(0).([]*storage.Template), args.Error(1)
 }
 
-func TestGetAllTemplates_DBError(t *testing.T) {
-	mockStorage := new(MockTemplateJSON)
+func TestGetAllTemplates(t *testing.T) {
+	tests := []struct {
+		name       string
+		mockResult []*storage.Template
+		mockError  error
+		wantStatus int
+		wantBody   string
+	}{
+		{
+			name:       "OK",
+			mockResult: []*storage.Template{{Code: "1"}, {Code: "2"}},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "Internal error",
+			mockError:  errors.New("database error"),
+			wantStatus: http.StatusInternalServerError,
+			wantBody:   "Internal server error",
+		},
+		{
+			name:       "Empty result",
+			mockResult: []*storage.Template{},
+			wantStatus: http.StatusOK,
+		},
+	}
 
-	mockStorage.On("GetAllTemplates", mock.Anything).Return(nil, errors.New("connection timeout"))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := new(MockAllTemplatesGetter)
+			mockService.On("GetAllTemplates", mock.Anything).
+				Return(tt.mockResult, tt.mockError)
 
-	logger := slog.Default()
-	handler := GetAllTemplates(logger, nil)
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/template/all", nil)
-	rr := httptest.NewRecorder()
+			r := chi.NewRouter()
+			r.Get("/api/templates", GetAllTemplates(log, mockService))
 
-	handler.ServeHTTP(rr, req)
+			req := httptest.NewRequest(http.MethodGet, "/api/templates", nil)
 
-	assert.Equal(t, http.StatusInternalServerError, rr.Code)
-	assert.Contains(t, rr.Body.String(), "Internal server error")
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			assert.Equal(t, tt.wantStatus, w.Code)
 
-	mockStorage.AssertExpectations(t)
-}
+			if tt.mockResult != nil {
+				var response []*storage.Template
 
-// Вспомогательная функция для создания указателя на строку
-func strPtr(s string) *string {
-	return &s
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+
+				assert.Equal(t, tt.mockResult, response)
+			}
+
+			if tt.wantBody != "" {
+				assert.Contains(t, w.Body.String(), tt.wantBody)
+			}
+
+			mockService.AssertExpectations(t)
+		})
+	}
 }

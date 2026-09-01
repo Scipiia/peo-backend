@@ -4,18 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"time"
 	"vue-golang/internal/storage"
+
+	"github.com/go-chi/render"
 )
 
-type ResultWorkers interface {
+type ResultWorkersGetter interface {
 	SaveOperationWorkers(ctx context.Context, req storage.SaveWorkers) error
 }
 
-func SaveWorkersOperation(log *slog.Logger, result ResultWorkers) http.HandlerFunc {
+func SaveWorkersOperation(log *slog.Logger, result ResultWorkersGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.executor.SaveWorkersOperation"
 

@@ -2,39 +2,20 @@ package get
 
 import (
 	"context"
-	"database/sql"
-	"errors"
-	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 	"vue-golang/internal/storage"
+
+	"github.com/go-chi/render"
 )
 
-// pkg/http-server/handlers/template/get.go
-
-type TemplateJSON interface {
+type TemplateByCodeGetter interface {
 	GetTemplateByCode(ctx context.Context, code string) (*storage.Template, error)
-	GetAllTemplates(ctx context.Context) ([]*storage.Template, error)
-
-	GetTemplateByCodeAdmin(ctx context.Context, id int64) (*storage.Template, error)
-	GetAllTemplatesAdmin(ctx context.Context) ([]*storage.Template, error)
 }
 
-type ResponseForm struct {
-	ID         int                 `json:"ID"`
-	Code       string              `json:"code"`
-	Name       string              `json:"name"`
-	Category   string              `json:"category"`
-	Systema    *string             `json:"systema"`
-	TypeIzd    *string             `json:"type_izd"`
-	Profile    *string             `json:"profile"`
-	Operations []storage.Operation `json:"operations"`
-}
-
-func GetTemplatesByCode(log *slog.Logger, template TemplateJSON) http.HandlerFunc {
+func GetTemplatesByCode(log *slog.Logger, template TemplateByCodeGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.GetTemplatesByCode"
 
@@ -50,58 +31,33 @@ func GetTemplatesByCode(log *slog.Logger, template TemplateJSON) http.HandlerFun
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		// Получаем шаблон из хранилища
 		template, err := template.GetTemplateByCode(ctx, code)
 		if err != nil {
-			if strings.Contains(err.Error(), "не найден") || errors.Is(err, sql.ErrNoRows) {
-				log.With(slog.String("op", op), slog.String("code", code)).Warn("Form not found")
-				http.Error(w, "Form not found", http.StatusNotFound)
-				return
-			}
-
-			log.With(
-				slog.String("op", op),
-				slog.String("code", code),
-				slog.String("error", err.Error()),
-			).Error("Failed to fetch template")
+			log.With(slog.String("op", op), slog.String("code", code), slog.String("error", err.Error())).Error("Failed to fetch template")
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		// Формируем ответ
-		response := ResponseForm{
-			ID:         template.ID,
-			Code:       template.Code,
-			Name:       template.Name,
-			Category:   template.Category,
-			Systema:    template.Systema,
-			TypeIzd:    template.TypeIzd,
-			Profile:    template.Profile,
-			Operations: template.Operations,
-		}
-
 		//log.With(slog.String("code", code)).Info("Successfully fetched form")
 
-		// Отправляем JSON
-		render.JSON(w, r, response)
+		render.JSON(w, r, template)
 	}
 }
 
-type ResponseAllForm struct {
-	Template []*storage.Template
-	Error    string
+type AllTemplatesGetter interface {
+	GetAllTemplates(ctx context.Context) ([]*storage.Template, error)
 }
 
-func GetAllTemplates(log *slog.Logger, template TemplateJSON) http.HandlerFunc {
+func GetAllTemplates(log *slog.Logger, template AllTemplatesGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.GetAllTemplates"
 
 		//log.With(slog.String("op", op)).Info("Fetching all templates")
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		templates, err := template.GetAllTemplates(ctx)
@@ -111,16 +67,15 @@ func GetAllTemplates(log *slog.Logger, template TemplateJSON) http.HandlerFunc {
 			return
 		}
 
-		response := ResponseAllForm{
-			Template: templates,
-			Error:    "",
-		}
-
-		render.JSON(w, r, response)
+		render.JSON(w, r, templates)
 	}
 }
 
-func GetTemplatesByCodeAdmin(log *slog.Logger, template TemplateJSON) http.HandlerFunc {
+type TemplateByCodeAdminGetter interface {
+	GetTemplateByCodeAdmin(ctx context.Context, id int64) (*storage.Template, error)
+}
+
+func GetTemplatesByCodeAdmin(log *slog.Logger, template TemplateByCodeAdminGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.GetTemplatesByCode"
 
@@ -143,12 +98,6 @@ func GetTemplatesByCodeAdmin(log *slog.Logger, template TemplateJSON) http.Handl
 		// Получаем шаблон из хранилища
 		template, err := template.GetTemplateByCodeAdmin(ctx, id)
 		if err != nil {
-			if strings.Contains(err.Error(), "не найден") || errors.Is(err, sql.ErrNoRows) {
-				log.With(slog.String("op", op), slog.Int64("id", id)).Warn("Form not found")
-				http.Error(w, "Form not found", http.StatusNotFound)
-				return
-			}
-
 			log.With(
 				slog.String("op", op),
 				slog.Int64("id", id),
@@ -165,12 +114,11 @@ func GetTemplatesByCodeAdmin(log *slog.Logger, template TemplateJSON) http.Handl
 	}
 }
 
-type ResponseAllFormAdmin struct {
-	Template []*storage.Template
-	Error    string
+type AllTemplatesAdminGetter interface {
+	GetAllTemplatesAdmin(ctx context.Context) ([]*storage.Template, error)
 }
 
-func GetAllTemplatesAdmin(log *slog.Logger, template TemplateJSON) http.HandlerFunc {
+func GetAllTemplatesAdmin(log *slog.Logger, template AllTemplatesAdminGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.GetAllTemplates"
 
@@ -186,11 +134,6 @@ func GetAllTemplatesAdmin(log *slog.Logger, template TemplateJSON) http.HandlerF
 			return
 		}
 
-		response := ResponseAllForm{
-			Template: templates,
-			Error:    "",
-		}
-
-		render.JSON(w, r, response)
+		render.JSON(w, r, templates)
 	}
 }

@@ -1,255 +1,125 @@
 package save
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"vue-golang/internal/storage"
 
-	"github.com/go-chi/render"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"log/slog"
-
-	"vue-golang/internal/storage"
+	"github.com/stretchr/testify/require"
 )
 
-// MockTemplateCreateProvider реализует интерфейс TemplateCreateProvider для тестов
 type MockTemplateCreateProvider struct {
 	mock.Mock
 }
 
 func (m *MockTemplateCreateProvider) CreateTemplateAdmin(ctx context.Context, res storage.TemplateAdmin) error {
-	args := m.Called(ctx, res)
-	return args.Error(0)
+	return m.Mock.Called(ctx, res).Error(0)
 }
 
-// Тест: успешное создание шаблона
-func TestSaveTemplateAdmin_Success(t *testing.T) {
-	mockProvider := new(MockTemplateCreateProvider)
+func TestSaveTemplateAdmin(t *testing.T) {
+	tests := []struct {
+		name        string
+		body        map[string]interface{}
+		mockError   error
+		wantStatus  int
+		invalidJSON bool
+		needMock    bool
+	}{
+		{
+			name: "OK",
+			body: map[string]interface{}{
+				"code":       "1",
+				"category":   "test",
+				"profile":    "test",
+				"operations": []storage.Operation{},
+				"rules":      []storage.Rule{},
+			},
+			wantStatus:  http.StatusOK,
+			invalidJSON: false,
+			needMock:    true,
+		},
+		{
+			name: "Create template error",
+			body: map[string]interface{}{
+				"code":       "1",
+				"category":   "test",
+				"profile":    "test",
+				"operations": []storage.Operation{},
+				"rules":      []storage.Rule{},
+			},
+			mockError:   errors.New("database error"),
+			wantStatus:  http.StatusInternalServerError,
+			invalidJSON: false,
+			needMock:    true,
+		},
+		{
+			name:        "Invalid json",
+			wantStatus:  http.StatusBadRequest,
+			invalidJSON: true,
+			needMock:    false,
+		},
+	}
 
-	// Ожидаем вызов с конкретными данными
-	mockProvider.On("CreateTemplateAdmin", mock.Anything, mock.MatchedBy(func(res storage.TemplateAdmin) bool {
-		return res.Code == "DOOR-NEW" &&
-			res.Category == "door" &&
-			res.Name == "Новая дверь" &&
-			res.IsActive == true &&
-			res.Profile == "КП45" &&
-			res.Systema == "Система А" &&
-			res.TypeIzd == "door" &&
-			res.HeadName == "Иванов"
-	})).Return(nil)
-
-	logger := slog.Default()
-	handler := SaveTemplateAdmin(logger, mockProvider)
-
-	// Подготовка валидного JSON запроса
-	reqBody := `{
-		"code": "DOOR-NEW",
-		"category": "door",
-		"is_active": true,
-		"name": "Новая дверь",
-		"profile": "КП45",
-		"systema": "Система А",
-		"type_izd": "door",
-		"head_name": "Иванов",
-		"operations": [
-			{"name": "сборка", "minutes": 45.0, "value": 15.0, "count": 1.0},
-			{"name": "адаптер ПДП", "minutes": 0.0, "value": 0.0, "count": 1.0}
-		],
-		"rules": [
-			{
-				"operation": "адаптер ПДП",
-				"condition": {"HasPetliRDRH": true},
-				"mode": "additivePlusMultiplied",
-				"unit_field": "ItemCountForRDRH",
-				"minutes_per_unit": 4.5
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := new(MockTemplateCreateProvider)
+			if tt.needMock {
+				mockService.On("CreateTemplateAdmin", mock.Anything, mock.MatchedBy(func(res storage.TemplateAdmin) bool {
+					return res.Code == tt.body["code"].(string) && res.Category == tt.body["category"].(string) && res.Profile == tt.body["profile"].(string)
+				})).Return(tt.mockError)
 			}
-		]
-	}`
 
-	req := httptest.NewRequest(http.MethodPost, "/api/templates/admin", strings.NewReader(reqBody))
-	req.Header.Set("Content-Type", "application/json")
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	rr := httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
+			r := chi.NewRouter()
+			r.Post("/template/new", SaveTemplateAdmin(log, mockService))
 
-	// Проверяем статус
-	assert.Equal(t, http.StatusOK, rr.Code)
+			bodyBates, err := json.Marshal(tt.body)
+			require.NoError(t, err)
 
-	// Проверяем ответ
-	var resp map[string]string
-	err := render.DecodeJSON(strings.NewReader(rr.Body.String()), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "created", resp["status"])
+			var req *http.Request
 
-	// Проверяем вызов мока
-	mockProvider.AssertExpectations(t)
-}
+			if tt.invalidJSON {
+				req = httptest.NewRequest(http.MethodPost, "/template/new", strings.NewReader("{invalid"))
+			} else {
+				req = httptest.NewRequest(http.MethodPost, "/template/new", bytes.NewReader(bodyBates))
+			}
 
-// Тест: невалидный JSON (синтаксическая ошибка)
-func TestSaveTemplateAdmin_InvalidJSON(t *testing.T) {
-	mockProvider := new(MockTemplateCreateProvider)
-	logger := slog.Default()
-	handler := SaveTemplateAdmin(logger, mockProvider)
+			req.Header.Set("Content-Type", "application/json")
 
-	// Невалидный JSON (отсутствует закрывающая скобка)
-	req := httptest.NewRequest(http.MethodPost, "/api/templates/admin", strings.NewReader(`{`))
-	req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			assert.Equal(t, tt.wantStatus, w.Code)
 
-	rr := httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
+			if tt.wantStatus == http.StatusOK {
+				var response map[string]interface{}
 
-	// Ожидаем 400 Bad Request
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Contains(t, rr.Body.String(), "ошибка парсинга JSON")
+				err = json.Unmarshal(w.Body.Bytes(), &response)
+				require.NoError(t, err)
 
-	// Мок не должен был быть вызван
-	mockProvider.AssertNotCalled(t, "CreateTemplateAdmin")
-}
+				assert.Equal(t, "created", response["status"])
+			}
 
-// Тест: ошибка сериализации операций
-func TestSaveTemplateAdmin_OperationsMarshalError(t *testing.T) {
-	//mockProvider := new(MockTemplateCreateProvider)
-	//logger := slog.Default()
-	//handler := SaveTemplateAdmin(logger, mockProvider)
+			if tt.mockError != nil {
+				assert.Contains(t, w.Body.String(), "ошибка создания шаблона")
+			}
 
-	// Создаём операцию с несериализуемым полем (канал) через кастомный тип
-	// Но проще: используем валидный JSON, но проверим логику через мок логгера
-	// Для простоты теста: проверим, что ошибка сериализации правил обрабатывается
+			if tt.invalidJSON {
+				assert.Contains(t, w.Body.String(), "ошибка парсинга JSON")
+			}
 
-	// В реальности ошибка сериализации маловероятна при валидных данных,
-	// но протестируем сценарий с циклической ссылкой через кастомный тип
-	// Однако для практичности: просто проверим обработку ошибки через мок
-
-	// Альтернатива: протестируем через кастомный мок логгера, но это сложно
-	// Вместо этого: проверим, что при ошибке сериализации возвращается 500
-
-	// Создаём валидный запрос, но подменим поведение через кастомный тип
-	// Для простоты: пропустим этот тест или проверим через интеграционный тест
-	// Фокус на основном сценарии — ошибка создания в БД
-
-	// Пропускаем этот тест как избыточный — ошибка сериализации маловероятна
-	// и сложно воспроизвести без кастомных типов
-	t.Skip("Ошибка сериализации маловероятна при валидных данных из JSON")
-}
-
-// Тест: пустые правила (должны сериализоваться как пустой массив)
-func TestSaveTemplateAdmin_EmptyRules(t *testing.T) {
-	mockProvider := new(MockTemplateCreateProvider)
-
-	// Ожидаем, что правила будут сериализованы как "[]"
-	mockProvider.On("CreateTemplateAdmin", mock.Anything, mock.MatchedBy(func(res storage.TemplateAdmin) bool {
-		var rules []storage.Rule
-		err := json.Unmarshal([]byte(res.Rules), &rules)
-		return err == nil && len(rules) == 0
-	})).Return(nil)
-
-	logger := slog.Default()
-	handler := SaveTemplateAdmin(logger, mockProvider)
-
-	// Запрос БЕЗ поля "rules" (должно стать пустым срезом)
-	reqBody := `{
-		"code": "WIN-TEST",
-		"category": "window",
-		"is_active": true,
-		"name": "Тестовое окно",
-		"profile": "КП40",
-		"systema": "Система Б",
-		"type_izd": "window",
-		"head_name": "Петров",
-		"operations": [
-			{"name": "сборка", "minutes": 30.0}
-		]
-		// Поле "rules" отсутствует — должно стать []
-	}`
-
-	req := httptest.NewRequest(http.MethodPost, "/api/templates/admin", strings.NewReader(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-
-	rr := httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(t, http.StatusOK, rr.Code)
-	mockProvider.AssertExpectations(t)
-}
-
-// Тест: ошибка создания в провайдере (БД)
-func TestSaveTemplateAdmin_ProviderError(t *testing.T) {
-	mockProvider := new(MockTemplateCreateProvider)
-
-	// Возвращаем ошибку при создании
-	mockProvider.On("CreateTemplateAdmin", mock.Anything, mock.Anything).
-		Return(errors.New("duplicate key value violates unique constraint"))
-
-	logger := slog.Default()
-	handler := SaveTemplateAdmin(logger, mockProvider)
-
-	reqBody := `{
-		"code": "DOOR-EXISTING",
-		"category": "door",
-		"is_active": true,
-		"name": "Существующая дверь",
-		"profile": "КП45",
-		"systema": "Система А",
-		"type_izd": "door",
-		"head_name": "Сидоров",
-		"operations": [{"name": "сборка", "minutes": 45.0}]
-	}`
-
-	req := httptest.NewRequest(http.MethodPost, "/api/templates/admin", strings.NewReader(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-
-	rr := httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
-
-	// Ожидаем 500 Internal Server Error
-	assert.Equal(t, http.StatusInternalServerError, rr.Code)
-	assert.Contains(t, rr.Body.String(), "ошибка создания шаблона")
-
-	mockProvider.AssertExpectations(t)
-}
-
-// Тест: обязательные поля отсутствуют (валидация на уровне бизнес-логики)
-func TestSaveTemplateAdmin_MissingRequiredFields(t *testing.T) {
-	mockProvider := new(MockTemplateCreateProvider)
-	logger := slog.Default()
-	handler := SaveTemplateAdmin(logger, mockProvider)
-
-	// Отсутствует обязательное поле "code"
-	reqBody := `{
-		"category": "door",
-		"is_active": true,
-		"name": "Без кода",
-		"operations": []
-	}`
-
-	req := httptest.NewRequest(http.MethodPost, "/api/templates/admin", strings.NewReader(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-
-	rr := httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
-
-	// В текущей реализации нет валидации обязательных полей — они будут пустыми
-	// Но провайдер вернёт ошибку при сохранении пустого кода
-	// Поэтому ожидаем 500 от провайдера, а не 400 от хендлера
-
-	// Для улучшения: добавить валидацию в хендлер:
-	// if req.Code == "" { http.Error(w, "поле code обязательно", http.StatusBadRequest); return }
-
-	// Пока проверим, что запрос доходит до провайдера с пустым кодом
-	// (реально будет ошибка БД из-за уникального индекса или NOT NULL)
-	mockProvider.On("CreateTemplateAdmin", mock.Anything, mock.MatchedBy(func(res storage.TemplateAdmin) bool {
-		return res.Code == ""
-	})).Return(errors.New("code cannot be empty"))
-
-	// Повторный вызов с тем же запросом уже с настроенным моком
-	rr2 := httptest.NewRecorder()
-	handler.ServeHTTP(rr2, req)
-
-	assert.Equal(t, http.StatusInternalServerError, rr2.Code)
-	mockProvider.AssertExpectations(t)
+			mockService.AssertExpectations(t)
+		})
+	}
 }

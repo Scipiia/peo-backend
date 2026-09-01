@@ -84,7 +84,6 @@ func TestGetNormOrder(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/api/orders/order/norm/"+tt.id, nil)
 
 			w := httptest.NewRecorder()
-
 			r.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
