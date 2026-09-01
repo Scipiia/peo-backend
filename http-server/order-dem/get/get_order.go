@@ -10,24 +10,24 @@ import (
 	"vue-golang/internal/storage"
 )
 
-type Request struct {
-	ID int `json:"id"`
-}
+//type Request struct {
+//	ID int `json:"id"`
+//}
 
-type ResponseOrder struct {
-	ID       int    `json:"id"`
-	OrderNum string `json:"order_num"`
-	Creator  int    `json:"creator"`
-	Customer string `json:"customer"`
-	DopInfo  string `json:"dop_info"`
-	MsNote   string `json:"ms_note"`
-
-	OrderDemPrice []*storage.OrderDemPrice `json:"order_dem_price"`
-	ImageBase64   string                   `json:"image_base_64"`
-
-	Error  string `json:"error"`
-	Status string `json:"status"`
-}
+//type ResponseOrder struct {
+//	ID       int    `json:"id"`
+//	OrderNum string `json:"order_num"`
+//	Creator  int    `json:"creator"`
+//	Customer string `json:"customer"`
+//	DopInfo  string `json:"dop_info"`
+//	MsNote   string `json:"ms_note"`
+//
+//	OrderDemPrice []*storage.OrderDemPrice `json:"order_dem_price"`
+//	ImageBase64   string                   `json:"image_base_64"`
+//
+//	Error  string `json:"error"`
+//	Status string `json:"status"`
+//}
 
 type OrderDetails interface {
 	//GetOrderDetails(ctx context.Context, id int) (*storage.ResultOrderDetails, error)
