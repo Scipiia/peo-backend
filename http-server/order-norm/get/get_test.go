@@ -224,9 +224,6 @@ func TestGetNormOrders(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
-
-			assert.Equal(t, tt.wantStatus, w.Code)
-
 			assert.Equal(t, tt.wantStatus, w.Code)
 
 			if tt.mockResult != nil {

@@ -7,32 +7,24 @@ import (
 	auth_ldap "vue-golang/internal/auth-ldap"
 )
 
-// 1. Интерфейс для проверки логина/пароля
 type Authenticator interface {
 	//AuthenticateUser(username, password string) (*auth_ldap.User, []string, error) // LDAP
 	AuthenticateUser(login string, password string) (*auth_ldap.User, []string, error) // user config
 }
 
-// 2. Интерфейс для генерации токена
 type TokenGenerator interface {
 	GenerateToken(user *auth_ldap.User, permissions []string) (string, error)
 }
 
-// 3. Интерфейс для валидации токена (нужен middleware)
 type TokenValidator interface {
 	ValidateToken(tokenString string) (*auth_ldap.CustomClaims, error)
 }
-
-// ==========================================
-// ХЭНДЛЕРЫ
-// ==========================================
 
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-// HandleLogin принимает только то, что ему нужно: логгер и интерфейсы
 func HandleLogin(log *slog.Logger, auth Authenticator, tokenGen TokenGenerator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.auth.HandleLogin"

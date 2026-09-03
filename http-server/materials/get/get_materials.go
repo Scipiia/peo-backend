@@ -3,12 +3,15 @@ package get
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"time"
 	"vue-golang/internal/storage"
+
+	"github.com/go-chi/render"
 )
+
+// Вспомогательный хэндлер, что бы смотреть материалы к заказу
 
 type MaterialProvider interface {
 	GetOrderMaterials(ctx context.Context, orderNum string, pos int) ([]*storage.KlaesMaterials, error)

@@ -3,11 +3,12 @@ package generate_excel
 import (
 	"context"
 	"fmt"
-	"github.com/xuri/excelize/v2"
 	"math"
 	"strings"
 	"vue-golang/internal/storage"
 	"vue-golang/internal/storage/mysql"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type GenerateExcelStorage interface {
@@ -161,7 +162,6 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 		}
 	}
 
-	// --- ФИНАЛЬНЫЕ ШТРИХИ ---
 	// 4. Закрепляем первую строку
 	f.SetPanes(sheet, &excelize.Panes{
 		Freeze:      true,
@@ -269,7 +269,6 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			//}
 		}
 
-		// Авто-ширина для колонок статистики
 		f.SetColWidth(sheet, "A", "C", 20)
 	}
 
@@ -331,8 +330,7 @@ func safeFloat64(f *float64) float64 {
 	return *f
 }
 
-//TODO суммарная статистика по заказам
-
+// TODO суммарная статистика по заказам
 type StatsRow struct {
 	Label string  // Название (например, "Холодные окна")
 	Count int     // Кол-во

@@ -11,7 +11,6 @@ import (
 	auth_ldap "vue-golang/internal/auth-ldap"
 	"vue-golang/internal/config"
 	generate_excel "vue-golang/internal/service/generate-excel"
-	get_norm_mosquito "vue-golang/internal/service/get-norm-mosquito"
 	"vue-golang/internal/service/recalculate"
 	"vue-golang/internal/storage/mysql"
 )
@@ -25,7 +24,6 @@ const (
 type Service struct {
 	RecalculateService   *recalculate.NormService
 	GenerateExcelService *generate_excel.GenerateExcelService
-	MosquitoService      *get_norm_mosquito.MosquitoService
 }
 
 type App struct {
@@ -65,7 +63,6 @@ func main() {
 		Service: Service{
 			RecalculateService:   recalculateService,
 			GenerateExcelService: generateExcelService,
-			//MosquitoService:      mosquitoService,
 		},
 		//LdapClient: ldapClient,
 		ConfigClient: configClient,
@@ -110,13 +107,6 @@ func main() {
 	}
 
 	log.Info("Server stopped")
-
-	//err = srv.ListenAndServe()
-	//if err != nil {
-	//	log.Error("failed start server ", slog.Any("err", err))
-	//}
-
-	//log.Error("server stopped")
 }
 
 type dualHandler struct {
