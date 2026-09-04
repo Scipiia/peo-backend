@@ -174,7 +174,7 @@ func (s *Storage) importGutterFromLegacy(ctx context.Context, legacyID int64, or
 
 	opsRows, err := s.db.QueryContext(ctx, stmtOps, legacyID)
 	if err != nil {
-		slog.Warn("failed to query ops", "op", op, "err", err)
+		return nil, fmt.Errorf("%s: query operations: %w", op, err)
 	} else {
 		defer opsRows.Close()
 
@@ -215,7 +215,7 @@ func (s *Storage) importGutterFromLegacy(ctx context.Context, legacyID int64, or
 		Count:        detail.Count,
 		Sqr:          detail.Sqr,
 		TotalTime:    detail.TotalTime,
-		Type:         "mosquito",
+		Type:         "vodootliv",
 		PartType:     "main",
 		Status:       &status,
 		Position:     0,
@@ -264,8 +264,7 @@ func (s *Storage) importGutterFromLegacy(ctx context.Context, legacyID int64, or
 			VALUES (?, ?, ?, ?, ?, ?, ?)`, newID, dop.Name, dop.Label, dop.Count, dop.Value, dop.Minutes, i)
 
 		if err != nil {
-			slog.Warn("failed to insert op", "op", op, "err", err)
-			// Можно продолжить, если не критично, или вернуть ошибку
+			return nil, fmt.Errorf("%s: insert operation %s: %w", op, dop.Name, err)
 		}
 	}
 
