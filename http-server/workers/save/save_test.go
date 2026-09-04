@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -28,13 +29,14 @@ func (m *MockResultWorkersGetter) SaveOperationWorkers(ctx context.Context, req 
 
 func TestSaveWorkersOperation(t *testing.T) {
 	tests := []struct {
-		name        string
-		body        storage.SaveWorkers
-		mockError   error
-		wantStatus  int
-		invalidJSON bool
-		checkJSON   bool
-		needMock    bool
+		name         string
+		body         storage.SaveWorkers
+		mockError    error
+		wantStatus   int
+		invalidJSON  bool
+		checkJSON    bool
+		needMock     bool
+		expectedBody string
 	}{
 		{
 			name: "OK",
@@ -70,6 +72,75 @@ func TestSaveWorkersOperation(t *testing.T) {
 			invalidJSON: true,
 			needMock:    false,
 		},
+		{
+			name:         "empty assignments",
+			body:         storage.SaveWorkers{},
+			wantStatus:   http.StatusBadRequest,
+			invalidJSON:  false,
+			needMock:     false,
+			expectedBody: "No assignments provided",
+		},
+		{
+			name: "Missing peoduct ID",
+			body: storage.SaveWorkers{
+				Assignments: []storage.OperationWorkers{
+					{
+						EmployeeID:    2,
+						OperationName: "Резка",
+					},
+				},
+			},
+			wantStatus:   http.StatusBadRequest,
+			needMock:     false,
+			expectedBody: "product_id is required",
+		},
+		{
+			name: "Missing employee ID",
+			body: storage.SaveWorkers{
+				Assignments: []storage.OperationWorkers{
+					{
+						ProductID:     1,
+						EmployeeID:    0,
+						OperationName: "Резка",
+					},
+				},
+			},
+			wantStatus:   http.StatusBadRequest,
+			needMock:     false,
+			expectedBody: "employee_id is required",
+		},
+		{
+			name: "Missing operation name",
+			body: storage.SaveWorkers{
+				Assignments: []storage.OperationWorkers{
+					{
+						ProductID:     1,
+						EmployeeID:    2,
+						OperationName: "",
+					},
+				},
+			},
+			wantStatus:   http.StatusBadRequest,
+			needMock:     false,
+			expectedBody: "operation_name is required",
+		},
+		{
+			name: "service error",
+			body: storage.SaveWorkers{
+				UpdateStatus: "assigned",
+				Assignments: []storage.OperationWorkers{
+					{
+						ProductID:     1,
+						EmployeeID:    2,
+						OperationName: "Резка",
+					},
+				},
+			},
+			mockError:    errors.New("db error"),
+			needMock:     true,
+			wantStatus:   http.StatusInternalServerError,
+			expectedBody: "Internal server error",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -100,6 +171,10 @@ func TestSaveWorkersOperation(t *testing.T) {
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 			require.Equal(t, tt.wantStatus, w.Code)
+
+			if tt.expectedBody != "" {
+				assert.Contains(t, w.Body.String(), tt.expectedBody)
+			}
 
 			if tt.checkJSON {
 				var response map[string]interface{}

@@ -17,11 +17,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type MockOrderDetails struct {
+type MockOrderDetailsGetter struct {
 	mock.Mock
 }
 
-func (m *MockOrderDetails) GetOrderDetails(ctx context.Context, orderNum string) ([]*storage.ResultOrderDetails, error) {
+func (m *MockOrderDetailsGetter) GetOrderDetails(ctx context.Context, orderNum string) ([]*storage.ResultOrderDetails, error) {
 	args := m.Called(ctx, orderNum)
 
 	if args.Get(0) == nil {
@@ -57,7 +57,7 @@ func TestGetOrderDetails(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService := new(MockOrderDetails)
+			mockService := new(MockOrderDetailsGetter)
 			mockService.On("GetOrderDetails", mock.Anything, tt.orderNum).
 				Return(tt.mockResult, tt.mockError)
 

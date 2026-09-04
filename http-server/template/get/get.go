@@ -55,7 +55,7 @@ func GetAllTemplates(log *slog.Logger, template AllTemplatesGetter) http.Handler
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.GetAllTemplates"
 
-		//log.With(slog.String("op", op)).Info("Fetching all templates")
+		log.With(slog.String("op", op)).Info("Fetching all templates")
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
