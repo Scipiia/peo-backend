@@ -9,8 +9,6 @@ import (
 func (s *Storage) GetOrderMaterials(ctx context.Context, orderNum string, pos int) ([]*storage.KlaesMaterials, error) {
 	const op = "storage.order-dem-materials.GetOrderMaterials.sql"
 
-	//orderNum := "Q6-327732"
-
 	stmtOrderID := `SELECT idorders FROM dem_orders WHERE numorders = ? AND class_id = ?`
 
 	var id int

@@ -22,7 +22,6 @@ func (s *Storage) GetOrdersMonth(ctx context.Context, year int, month int, searc
 		`
 		args = append(args, "%"+search+"%")
 	} else {
-		// Иначе фильтруем по месяцу
 		startOfMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 		endOfMonth := startOfMonth.AddDate(0, 1, 0)
 		startUnix := startOfMonth.Unix()
@@ -39,7 +38,6 @@ func (s *Storage) GetOrdersMonth(ctx context.Context, year int, month int, searc
 
 	// Дополнительно вытягивать только АЛ заказы
 	stmt += " AND (order_num LIKE '%Q6%' OR order_num LIKE '%R6-%')"
-	//order_num LIKE '%Q6%' OR order_num LIKE '%R6%')
 
 	rows, err := s.db.QueryContext(ctx, stmt, args...)
 	if err != nil {

@@ -3,9 +3,10 @@ package mysql
 import (
 	"context"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
 	"math/rand"
 	"vue-golang/internal/storage"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 func (s *Storage) SaveNormOrder(ctx context.Context, result storage.OrderNormDetails) (int64, error) {
@@ -55,6 +56,8 @@ func (s *Storage) SaveNormOperation(ctx context.Context, OrderID int64, operatio
 	if err != nil {
 		return fmt.Errorf("%s: prepare statement: %w", op, err)
 	}
+
+	defer stmt.Close()
 
 	for i, opr := range operations {
 		opName := opr.Name

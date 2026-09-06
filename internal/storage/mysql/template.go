@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
 	"vue-golang/internal/storage"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 func (s *Storage) GetTemplateByCode(ctx context.Context, code string) (*storage.Template, error) {
@@ -21,7 +22,6 @@ func (s *Storage) GetTemplateByCode(ctx context.Context, code string) (*storage.
 
 	template := &storage.Template{}
 
-	// Сканируем JSON как строку
 	var operationsJSON string
 	var rulesJSON string
 	err := s.db.QueryRowContext(ctx, query, code).Scan(

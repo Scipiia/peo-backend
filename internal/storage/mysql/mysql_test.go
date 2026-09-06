@@ -12,7 +12,7 @@ var testDB *sql.DB
 func TestMain(m *testing.M) {
 	// Подключаемся к тестовой БД
 	var err error
-	testDB, err = sql.Open("mysql", "root:@tcp(mysql-8.0:3306)/test_migr?parseTime=true")
+	testDB, err = sql.Open("mysql", "valera:pass@tcp(localhost:3306)/aaaa?parseTime=true")
 	if err != nil {
 		panic(fmt.Errorf("не удалось подключиться к тестовой БД: %w", err))
 	}

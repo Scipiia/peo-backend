@@ -204,6 +204,10 @@ func (s *Storage) importGutterFromLegacy(ctx context.Context, legacyID int64, or
 		}
 
 		detail.TotalTime = math.Round(totalTimeVo*1000) / 1000
+
+		if len(detail.Operations) == 0 {
+			return nil, fmt.Errorf("%s: no operations found", op)
+		}
 	}
 
 	status := "in_production"
@@ -279,11 +283,10 @@ func (s *Storage) importGutterFromLegacy(ctx context.Context, legacyID int64, or
 func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, orderNum string, a, b, c, d, sqr, count float64, operations []storage.NormOperation) (*storage.GetOrderDetails, error) {
 	const op = "storage.mysql.SaveNashchelnikNorm"
 
-	// 0. ПОЛУЧАЕМ ДАННЫЕ ЗАКАЗА (Заказчик и т.д.)
 	var customerName string
 	err := s.db.QueryRowContext(ctx, `SELECT ordername FROM dem_orders WHERE idorders = ?`, legacyID).Scan(&customerName)
 	if err != nil {
-		customerName = "" // Если не нашли, пусть будет пусто
+		customerName = ""
 	}
 
 	// TODO в будущем для обновления и предзаполнения данными
@@ -291,7 +294,6 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 	//paramsJSON, _ := json.Marshal(paramsMap)
 	//paramsStr := string(paramsJSON)
 
-	// Считаем общее время
 	var totalTime float64
 	for _, opr := range operations {
 		totalTime += opr.Value
@@ -304,20 +306,13 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 	}
 	defer tx.Rollback()
 
-	// 4. СОЗДАЕМ ИЛИ ОБНОВЛЯЕМ ИНСТАНС ЗАКАЗА
 	var existingID int64
-	//err = s.db.QueryRowContext(ctx, `
-	//	SELECT id FROM dem_product_instances_al
-	//	WHERE order_num = ? AND type = 'vodootliv' LIMIT 1
-	//`, orderNum).Scan(&existingID)
 	err = tx.QueryRowContext(ctx, `SELECT id FROM dem_product_instances_al WHERE order_num = ? AND type = 'vodootliv' LIMIT 1 FOR UPDATE`, orderNum).Scan(&existingID)
 
 	status := "in_production"
 	var newItem storage.GetOrderDetails
 
 	if existingID > 0 {
-		// Обновляем существующий
-		// systema = ? добавить (выше туду)
 		_, err = tx.ExecContext(ctx,
 			`UPDATE dem_product_instances_al SET total_time = ?, customer = ?, count = ?, sqr = ? WHERE id = ?`,
 			totalTime,
@@ -331,7 +326,6 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 			return nil, fmt.Errorf("%s: update failed: %w", op, err)
 		}
 
-		// Удаляем старые операции, чтобы не было дублей
 		_, err = tx.ExecContext(ctx, `DELETE FROM dem_operation_values_al WHERE product_id = ?`, existingID)
 		if err != nil {
 			return nil, fmt.Errorf("%s: удаление не удалось: %w", op, err)
@@ -339,8 +333,6 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 
 		newItem.ID = existingID
 	} else {
-		// Создаем новый
-		// systema перед profile и добавить ?
 		res, err := tx.ExecContext(ctx, `
 			INSERT INTO dem_product_instances_al (
 				order_num, template_code, name, customer, count, total_time,
@@ -356,7 +348,6 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 			totalTime,
 			&status,
 			sqr,
-			//paramsStr,
 		)
 
 		if err != nil {
@@ -382,7 +373,6 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 		return nil, err
 	}
 
-	// Заполняем ответ для фронта
 	newItem.OrderNum = orderNum
 	newItem.TotalTime = totalTime
 	newItem.Operations = operations
@@ -396,7 +386,6 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 func (s *Storage) GetNashchelnikRawData(ctx context.Context, legacyID int64) (*storage.NashchelnikRawData, error) {
 	const op = "storage.mysql.GetNashchelnikRawData"
 
-	// 1. Получаем шапку заказа
 	var data storage.NashchelnikRawData
 	data.LegacyID = legacyID
 
@@ -426,7 +415,6 @@ func (s *Storage) GetNashchelnikRawData(ctx context.Context, legacyID int64) (*s
 
 	// 2. Получаем операции ИЗ ЛЕГАСИ, НО БЕЗ ГИБА И ОТБОРТОВКИ
 	// Эти операции мы возьмем "как есть", а Гиб/Отбортовку посчитаем по новым формулам
-	// Проверь имя таблицы: dem_type_works или dem_types?
 	stmtOps := `
 		SELECT 
 			d.name_mat,
@@ -436,7 +424,7 @@ func (s *Storage) GetNashchelnikRawData(ctx context.Context, legacyID int64) (*s
 		LEFT JOIN dem_type_works t ON d.type_m_id = t.type_m_id
 		WHERE d.orderid = ? 
 		  AND t.type_code LIKE 'trud'
-		  AND d.name_mat NOT IN ('Гиб', 'Отбортовка') -- 🔥 ИСКЛЮЧАЕМ ПЕРЕСЧИТЫВАЕМЫЕ
+		  AND d.name_mat NOT IN ('Гиб', 'Отбортовка')
 		GROUP BY d.name_mat
 		ORDER BY FIELD(d.name_mat, 'Разметка', 'Резка', 'Упаковка')
 	`

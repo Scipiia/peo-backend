@@ -2,217 +2,138 @@ package mysql
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"strconv"
+	"errors"
+	"regexp"
 	"testing"
 	"time"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/require"
 )
 
-type TestOrderFixture struct {
-	OrderNum  string
-	Creator   int
-	Customer  string
-	DopInfo   string
-	MsNote    string
-	Year      int
-	Month     int
-	Positions []TestPosition
-	Images    []TestImage
-	Plans     []TestPlan
-}
-
-type TestPosition struct {
-	Position     string
-	NamePosition string
-	Count        string
-}
-
-type TestImage struct {
-	OrderName string
-	OrderPos  string
-	Image     string
-}
-
-type TestPlan struct {
-	IDOrder int64
-	X       string // position
-	Color   string
-	Sqr     float64
-}
-
-func createTestOrderDem(t *testing.T, fixture TestOrderFixture) int64 {
-
-	stmtReady := `INSERT INTO dem_ready (order_num, creator, customer, dop_info, ms_note, creation_date) VALUES (?, ?, ?, ?, ?, ?)`
-
-	creationDate := time.Date(fixture.Year, time.Month(fixture.Month), 15, 10, 0, 0, 0, time.UTC).Unix()
-	var id int64
-
-	result, err := testDB.Exec(stmtReady, fixture.OrderNum, fixture.Creator, fixture.Customer, fixture.DopInfo, fixture.MsNote, creationDate)
+func TestGetOrdersMonth_ByMonth_OK(t *testing.T) {
+	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
+	defer db.Close()
+	stor := &Storage{db: db}
 
-	id, err = result.LastInsertId()
+	start := time.Date(2023, 10, 1, 0, 0, 0, 0, time.UTC).Unix()
+	end := time.Date(2023, 11, 1, 0, 0, 0, 0, time.UTC).Unix()
+
+	mock.ExpectQuery(regexp.QuoteMeta(`
+			SELECT id, order_num, creator, customer, dop_info, ms_note 
+			FROM dem_ready 
+			WHERE CAST(creation_date AS UNSIGNED) >= ? 
+			AND CAST(creation_date AS UNSIGNED) < ?
+			AND (order_num LIKE '%Q6%' OR order_num LIKE '%R6-%')
+		`)).
+		WithArgs(start, end).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "order_num", "creator", "customer", "dop_info", "ms_note"}).AddRow(100, "Q6-123", 12, "customer", "dop_info", "ms_note"))
+
+	result, err := stor.GetOrdersMonth(context.Background(), 2023, 10, "")
 	require.NoError(t, err)
+	require.Len(t, result, 1)
+	require.Equal(t, "Q6-123", result[0].OrderNum)
 
-	// 2. Вставляем позиции
-	for _, pos := range fixture.Positions {
-		_, err := testDB.Exec(`
-			INSERT INTO dem_price (numorders, position, name_position, kol_vo)
-			VALUES (?, ?, ?, ?)
-		`, fixture.OrderNum, pos.Position, pos.NamePosition, pos.Count)
-		require.NoError(t, err)
-	}
-
-	// 3. Вставляем изображения
-	for _, img := range fixture.Images {
-		_, err := testDB.Exec(`
-			INSERT INTO dem_images (im_ordername, im_orderpos, im_image)
-			VALUES (?, ?, ?)
-		`, img.OrderName, img.OrderPos, img.Image)
-		require.NoError(t, err)
-	}
-
-	// 4. Вставляем планы
-	for _, plan := range fixture.Plans {
-		_, err := testDB.Exec(`
-			INSERT INTO dem_plan (idorder, x, color, sqr)
-			VALUES (?, ?, ?, ?)
-		`, plan.IDOrder, plan.X, plan.Color, plan.Sqr)
-		require.NoError(t, err)
-	}
-
-	return id
+	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func cleanupTestDB(t *testing.T) {
-	tables := []string{"dem_ready", "dem_price", "dem_images", "dem_plan"}
-	for _, table := range tables {
-		_, err := testDB.Exec("DELETE FROM " + table)
-		require.NoError(t, err)
-	}
+func TestGetOrdersMonth_BySearch_OK(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+	stor := &Storage{db: db}
+
+	mock.ExpectQuery(regexp.QuoteMeta(`
+			SELECT id, order_num, creator, customer, dop_info, ms_note 
+			FROM dem_ready 
+			WHERE order_num LIKE ?
+			AND (order_num LIKE '%Q6%' OR order_num LIKE '%R6-%')
+		`)).
+		WithArgs("%Q6-123%").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "order_num", "creator", "customer", "dop_info", "ms_note"}).AddRow(100, "Q6-123", 12, "customer", "dop_info", "ms_note"))
+
+	result, err := stor.GetOrdersMonth(context.Background(), 2023, 10, "Q6-123")
+	require.NoError(t, err)
+	require.Len(t, result, 1)
+	require.Equal(t, "Q6-123", result[0].OrderNum)
+
+	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-//func TestCreateOrder(t *testing.T) {
-//	createTestOrderDem(t, "Q6-123", 2026, 01)
-//}
-
-//func TestDeleteOrder(t *testing.T) {
-//	cleanupTestDB(t)
-//}
-
-func TestStorage_GetOrdersMonth(t *testing.T) {
-	cleanupTestDB(t)
-
-	// Ожидаемые номера заказов
-	expectedOrderNums := []string{"Q6-0", "Q6-1", "Q6-2"}
-
-	//pkg := TestOrderFixture{}
-
-	for i := 0; i < 3; i++ {
-		createTestOrderDem(t, TestOrderFixture{
-			OrderNum:  "Q6-" + strconv.Itoa(i),
-			Creator:   i,
-			Customer:  "testCust" + strconv.Itoa(i),
-			DopInfo:   "testDop" + strconv.Itoa(i),
-			MsNote:    "testNot" + strconv.Itoa(i),
-			Year:      2026,
-			Month:     1,
-			Positions: nil,
-			Images:    nil,
-			Plans:     nil,
-		})
-	}
-
-	//for _, num := range expectedOrderNums {
-	//	createTestOrderDem(t) // год — int, лучше 2026
-	//}
-
-	s := &Storage{db: testDB}
-	orders, err := s.GetOrdersMonth(context.Background(), 2026, 1, "")
+func TestGetOrdersMonth_QueryError(t *testing.T) {
+	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	defer db.Close()
+	stor := &Storage{db: db}
 
-	// Собираем фактические номера
-	actualOrderNums := make([]string, len(orders))
-	for i, order := range orders {
-		actualOrderNums[i] = order.OrderNum
-	}
+	mock.ExpectQuery(regexp.QuoteMeta(`
+			SELECT id, order_num, creator, customer, dop_info, ms_note 
+			FROM dem_ready 
+			WHERE order_num LIKE ?
+			AND (order_num LIKE '%Q6%' OR order_num LIKE '%R6-%')
+		`)).
+		WithArgs("%Q6-123%").
+		WillReturnError(errors.New("query error"))
 
-	// Проверяем, что все ожидаемые заказы получены (порядок не важен)
-	assert.ElementsMatch(t, expectedOrderNums, actualOrderNums)
+	result, err := stor.GetOrdersMonth(context.Background(), 2023, 10, "Q6-123")
+	require.Error(t, err)
+	require.Nil(t, result)
+	require.Contains(t, err.Error(), "query error")
+
+	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestStorage_GetOrdersMonthWithSearch(t *testing.T) {
-	cleanupTestDB(t)
-
-	for i := 0; i < 3; i++ {
-		createTestOrderDem(t, TestOrderFixture{
-			OrderNum:  "Q6-" + strconv.Itoa(i),
-			Creator:   i,
-			Customer:  "testCust" + strconv.Itoa(i),
-			DopInfo:   "testDop" + strconv.Itoa(i),
-			MsNote:    "testNot" + strconv.Itoa(i),
-			Year:      2026,
-			Month:     1,
-			Positions: nil,
-			Images:    nil,
-			Plans:     nil,
-		})
-	}
-
-	search := "Q6-0"
-
-	s := &Storage{db: testDB}
-	orders, err := s.GetOrdersMonth(context.Background(), 2026, 1, search)
+func TestGetOrderDetails_OK(t *testing.T) {
+	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	assert.Len(t, orders, 1)
-	assert.Equal(t, "Q6-0", orders[0].OrderNum)
+	defer db.Close()
+	stor := &Storage{db: db}
+
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT ANY_VALUE(p.id_) AS id, ANY_VALUE(t.text_type) AS text_type, p.x, 
+                    ANY_VALUE(r.order_num) AS order_num, SUM(p.sqr) AS sqr, ANY_VALUE(p.note) AS note,
+                    SUM(p.icount) AS icount, ANY_VALUE(p.color) AS color, ANY_VALUE(i.im_image) AS im_image, ANY_VALUE(r.customer) AS customer 
+             FROM dem_plan p 
+             LEFT JOIN dem_ready r ON r.id = p.idorder 
+             LEFT JOIN dem_images i ON i.im_ordername = r.order_num AND i.im_orderpos = p.x
+             LEFT JOIN dem_types t ON p.type = t.id_
+             WHERE r.order_num = ? AND p.type NOT IN (17, 18) 
+             GROUP BY p.x, p.type`)).
+		WithArgs("Q6-123").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "text_type", "x", "order_num", "sqr", "note", "icount", "color", "im_image", "customer"}).
+			AddRow(100, "text_type", 1, "Q6-123", 0.555, "note", 2, "color", "im_image", "customer"))
+
+	result, err := stor.GetOrderDetails(context.Background(), "Q6-123")
+	require.NoError(t, err)
+	require.Len(t, result, 1)
+	require.Equal(t, "Q6-123", result[0].OrderNum)
+	require.Equal(t, 0.555, result[0].Sqr, 0.000001)
+
+	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestStorage_GetOrdersMonth_NoOrdersInMonth(t *testing.T) {
-	cleanupTestDB(t)
-
-	for i := 0; i < 3; i++ {
-		createTestOrderDem(t, TestOrderFixture{
-			OrderNum:  "Q6-" + strconv.Itoa(i),
-			Creator:   i,
-			Customer:  "testCust" + strconv.Itoa(i),
-			DopInfo:   "testDop" + strconv.Itoa(i),
-			MsNote:    "testNot" + strconv.Itoa(i),
-			Year:      2026,
-			Month:     2,
-			Positions: nil,
-			Images:    nil,
-			Plans:     nil,
-		})
-	}
-
-	s := &Storage{db: testDB}
-	orders, err := s.GetOrdersMonth(context.Background(), 2026, 1, "") // январь
+func TestGetOrderDetails_QueryError(t *testing.T) {
+	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	assert.Empty(t, orders, "Ожидался пустой список заказов за январь 2026")
-}
+	defer db.Close()
+	stor := &Storage{db: db}
 
-func TestStorage_GetOrdersMonth_SearchNotFound(t *testing.T) {
-	cleanupTestDB(t)
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT ANY_VALUE(p.id_) AS id, ANY_VALUE(t.text_type) AS text_type, p.x, 
+                    ANY_VALUE(r.order_num) AS order_num, SUM(p.sqr) AS sqr, ANY_VALUE(p.note) AS note,
+                    SUM(p.icount) AS icount, ANY_VALUE(p.color) AS color, ANY_VALUE(i.im_image) AS im_image, ANY_VALUE(r.customer) AS customer 
+             FROM dem_plan p 
+             LEFT JOIN dem_ready r ON r.id = p.idorder 
+             LEFT JOIN dem_images i ON i.im_ordername = r.order_num AND i.im_orderpos = p.x
+             LEFT JOIN dem_types t ON p.type = t.id_
+             WHERE r.order_num = ? AND p.type NOT IN (17, 18) 
+             GROUP BY p.x, p.type`)).
+		WithArgs("Q6-123").
+		WillReturnError(errors.New("ошибка сканирования строк для получения  деталей заказа"))
 
-	for i := 0; i < 3; i++ {
-		createTestOrderDem(t, TestOrderFixture{
-			OrderNum:  "Q6-" + strconv.Itoa(i),
-			Creator:   i,
-			Customer:  "testCust" + strconv.Itoa(i),
-			DopInfo:   "testDop" + strconv.Itoa(i),
-			MsNote:    "testNot" + strconv.Itoa(i),
-			Year:      2026,
-			Month:     1,
-			Positions: nil,
-			Images:    nil,
-			Plans:     nil,
-		})
-	}
+	result, err := stor.GetOrderDetails(context.Background(), "Q6-123")
+	require.Error(t, err)
+	require.Nil(t, result)
+	require.Contains(t, err.Error(), "ошибка сканирования строк для получения  деталей заказа")
 
-	s := &Storage{db: testDB}
-	orders, err := s.GetOrdersMonth(context.Background(), 2026, 1, "NONEXISTENT")
-	require.NoError(t, err)
-	assert.Empty(t, orders, "Ожидался пустой результат при поиске несуществующего заказа")
+	require.NoError(t, mock.ExpectationsWereMet())
 }

@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
 	"log/slog"
 	"math"
 	"vue-golang/internal/storage"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 func (s *Storage) GetMosquitoOrderDetails(ctx context.Context, requestedID int64) (*storage.GetOrderDetails, error) {
@@ -22,11 +23,9 @@ func (s *Storage) GetMosquitoOrderDetails(ctx context.Context, requestedID int64
 		&item.ParentProductID, &item.ParentAssembly, &item.Status, &item.Position, &item.ReadyDate)
 
 	if err == nil {
-		// ✅ Нашли по newID — подгружаем операции и возвращаем
 		ops, err := s.loadOperationsForProduct(ctx, item.ID)
 		if err != nil {
 			slog.Warn("failed to load operations", "op", op, "product_id", item.ID, "err", err)
-			// Не падаем, возвращаем заказ без операций — фронт покажет пустой список
 		} else {
 			item.Operations = ops
 		}
@@ -36,14 +35,12 @@ func (s *Storage) GetMosquitoOrderDetails(ctx context.Context, requestedID int64
 		return nil, fmt.Errorf("%s: ошибка поиска по newID: %w", op, err)
 	}
 
-	// 🔹 ШАГ 2: Не нашли по newID → считаем, что requestedID — это legacy idorders
 	var orderNum string
 	err = s.db.QueryRowContext(ctx, `SELECT numorders FROM dem_orders WHERE idorders = ? AND class_id = 4`, requestedID).Scan(&orderNum)
 	if err != nil {
 		return nil, fmt.Errorf("%s: не удалось получить номер заказа из архива (legacy_id=%d): %w", op, requestedID, err)
 	}
 
-	// 🔹 ШАГ 3: Пробуем найти в новой базе по order_num (уже импортирован?)
 	err = s.db.QueryRowContext(ctx, `
 		SELECT id, order_num, name, count, total_time, created_at, type, 
 		       part_type, parent_product_id, parent_assembly, status, position
@@ -69,13 +66,11 @@ func (s *Storage) GetMosquitoOrderDetails(ctx context.Context, requestedID int64
 		return nil, fmt.Errorf("%s: ошибка поиска по order_num: %w", op, err)
 	}
 
-	// 🔹 ШАГ 4: Импорт из легаси
 	newItem, err := s.importMosquitoFromLegacy(ctx, requestedID, orderNum)
 	if err != nil {
 		return nil, fmt.Errorf("%s: импорт не удался: %w", op, err)
 	}
 
-	// 🔹 После импорта сразу подгружаем операции (они только что вставлены)
 	ops, err := s.loadOperationsForProduct(ctx, newItem.ID)
 	if err != nil {
 		slog.Warn("failed to load operations after import", "op", op, "product_id", newItem.ID, "err", err)
@@ -91,7 +86,6 @@ func (s *Storage) GetMosquitoOrderDetails(ctx context.Context, requestedID int64
 func (s *Storage) importMosquitoFromLegacy(ctx context.Context, legacyID int64, orderNum string) (*storage.GetOrderDetails, error) {
 	const op = "storage.mysql.importMosquitoFromLegacy"
 
-	// 🔹 1. Читаем шапку из dem_orders
 	stmtOrder := `SELECT idorders, numorders, ordername, 'Москитная сетка', 'mosquito' as type, 'main' as part_type, 'in_production' as status, '' as template_code
 				FROM dem_orders
 				WHERE idorders = ? AND class_id = '4'`
@@ -134,7 +128,6 @@ func (s *Storage) importMosquitoFromLegacy(ctx context.Context, legacyID int64, 
 	for tRows.Next() {
 		var vid, cnt int
 		if err := tRows.Scan(&vid, &cnt); err == nil {
-			// ⚠️ Проверьте в старой БД, какие vid соответствуют VSN. Обычно это 6 и 7.
 			if vid == 5 || vid == 6 {
 				typeCounts["vsn"] += cnt
 			} else {
@@ -187,11 +180,10 @@ func (s *Storage) importMosquitoFromLegacy(ctx context.Context, legacyID int64, 
 		var rawHours float64
 		var name string
 
-		// ⚠️ Порядок Scan должен точно совпадать с порядком SELECT выше!
 		err := opsRows.Scan(
-			&name,       // name_mat → operation_label
-			&rawHours,   // SUM(value) → value (суммарные часы)
-			&oper.Count, // SUM(kol_vo) → count (общее количество)
+			&name,
+			&rawHours,
+			&oper.Count,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("%s: scan operation: %w", op, err)
@@ -229,16 +221,12 @@ func (s *Storage) importMosquitoFromLegacy(ctx context.Context, legacyID int64, 
 		Systema:      "",
 	}
 
-	//fmt.Println("STATUSSSSSSS", newItem)
-
-	// 🔹 4. Транзакция: вставка шапки + операций
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("%s: транзакция: %w", op, err)
 	}
 	defer tx.Rollback()
 
-	// 4.1 Вставляем шапку заказа
 	res, err := tx.ExecContext(ctx, `
         INSERT INTO dem_product_instances_al (
             order_num, template_code, name, customer, count, total_time, 
@@ -250,7 +238,6 @@ func (s *Storage) importMosquitoFromLegacy(ctx context.Context, legacyID int64, 
 	)
 
 	if err != nil {
-		// Обработка дубля (если успели импортировать параллельно)
 		if mysqlErr, ok := err.(*mysql.MySQLError); ok && mysqlErr.Number == 1062 {
 			// Рекурсивно читаем то, что вставил конкурент
 			return s.GetMosquitoOrderDetails(ctx, legacyID)
@@ -273,7 +260,6 @@ func (s *Storage) importMosquitoFromLegacy(ctx context.Context, legacyID int64, 
 		}
 	}
 
-	// 🔹 5. Коммит транзакции
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("%s: коммит: %w", op, err)
 	}
@@ -284,7 +270,6 @@ func (s *Storage) importMosquitoFromLegacy(ctx context.Context, legacyID int64, 
 func (s *Storage) loadOperationsForProduct(ctx context.Context, productID int64) ([]storage.NormOperation, error) {
 	const op = "storage.mysql.loadOperationsForProduct"
 
-	// Добавил id и sort_operation в выборку, чтобы быть уверенным в порядке и уникальности
 	stmtOps := `SELECT id, operation_name, operation_label, count, value, minutes, sort_operation 
                 FROM dem_operation_values_al 
                 WHERE product_id = ? 
@@ -294,11 +279,10 @@ func (s *Storage) loadOperationsForProduct(ctx context.Context, productID int64)
 	if err != nil {
 		return nil, fmt.Errorf("%s: query operations: %w", op, err)
 	}
-	defer rowsOps.Close() // Закрываем основной результат в конце
+	defer rowsOps.Close()
 
 	var ops []storage.NormOperation
 
-	// Подготовка запроса для исполнителей (можно вынести в переменную уровня Storage, но пока оставим так)
 	stmtExecOper := `SELECT employee_id, actual_minutes, actual_value 
                      FROM dem_operation_executors_al 
                      WHERE product_id = ? AND operation_name = ?`
@@ -308,16 +292,11 @@ func (s *Storage) loadOperationsForProduct(ctx context.Context, productID int64)
 		var opID int64
 		var sortOp int
 
-		// Сканируем все поля, включая ID и сортировку
 		err := rowsOps.Scan(&opID, &oper.Name, &oper.Label, &oper.Count, &oper.Value, &oper.Minutes, &sortOp)
 		if err != nil {
 			return nil, fmt.Errorf("%s: scan operation: %w", op, err)
 		}
 
-		// Сохраняем ID операции, если он есть в структуре NormOperation,
-		// или используем Name для связи (как у вас сейчас)
-
-		// --- Загрузка исполнителей для текущей операции ---
 		execRows, err := s.db.QueryContext(ctx, stmtExecOper, productID, oper.Name)
 		if err != nil {
 			slog.Warn("failed to query executors", "op", op, "err", err)
@@ -337,7 +316,6 @@ func (s *Storage) loadOperationsForProduct(ctx context.Context, productID int64)
 			workers = append(workers, ex)
 		}
 
-		// ВАЖНО: Закрываем execRows сразу здесь, а не через defer!
 		execRows.Close()
 
 		if err = execRows.Err(); err != nil {

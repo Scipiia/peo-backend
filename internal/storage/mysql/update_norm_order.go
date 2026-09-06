@@ -21,19 +21,16 @@ func (s *Storage) UpdateNormOrder(ctx context.Context, ID int64, update storage.
 	}
 	defer tx.Rollback()
 
-	//Обновляем основное изделие
 	_, err = tx.ExecContext(ctx, stmtUpdate, update.TotalTime, update.Type, update.Status, ID)
 	if err != nil {
 		return fmt.Errorf("%s: ошибка обновление основной информации об изделии: %w", op, err)
 	}
 
-	// Удаляем старые операции
 	_, err = tx.ExecContext(ctx, stmtDelete, ID)
 	if err != nil {
 		return fmt.Errorf("%s: ошибка удаления старых операции: %w", op, err)
 	}
 
-	// Вставляем новые операции
 	prepareInsert, err := tx.PrepareContext(ctx, stmtInsert)
 	if err != nil {
 		return fmt.Errorf("%s: ошибка при подготовке вставки новых операции: %w", op, err)
@@ -52,7 +49,6 @@ func (s *Storage) UpdateNormOrder(ctx context.Context, ID int64, update storage.
 		}
 	}
 
-	// Коммит
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("%s: ошибка завершения транзакции: %w", op, err)
 	}
