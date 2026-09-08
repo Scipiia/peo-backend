@@ -85,13 +85,25 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	for i, emp := range employees {
 		colIdx := baseLen + i + 1
 		empColMap[emp.ID] = colIdx
-		cell, _ := excelize.CoordinatesToCellName(colIdx, 1)
-		f.SetCellValue(sheet, cell, emp.Name)
+		cell, err := excelize.CoordinatesToCellName(colIdx, 1)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get cell name: %w", err)
+		}
+
+		if err := f.SetCellValue(sheet, cell, emp.Name); err != nil {
+			return nil, fmt.Errorf("failed to set cell value: %w", err)
+		}
 	}
 
 	// Применяем стиль к шапке
-	lastCol, _ := excelize.CoordinatesToCellName(baseLen+len(employees), 1)
-	f.SetCellStyle(sheet, "A1", lastCol, headerStyle)
+	lastCol, err := excelize.CoordinatesToCellName(baseLen+len(employees), 1)
+	if err != nil {
+		return nil, fmt.Errorf("failed to coordinate cell name: %w", err)
+	}
+	err = f.SetCellStyle(sheet, "A1", lastCol, headerStyle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set cell style: %w", err)
+	}
 
 	// 3. ЗАПОЛНЯЕМ ДАННЫЕ
 	for rowIdx, p := range products {
@@ -169,8 +181,14 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 		// 4. Сотрудники (всегда СРАБОТАЕТ ПРАВИЛЬНО благодаря empColMap)
 		for empID, val := range p.EmployeeValue {
 			if colIdx, ok := empColMap[empID]; ok {
-				cell, _ := excelize.CoordinatesToCellName(colIdx, rowNum)
-				f.SetCellValue(sheet, cell, val)
+				cell, err := excelize.CoordinatesToCellName(colIdx, rowNum)
+				if err != nil {
+					return nil, fmt.Errorf("failed to coordinate to cell name: %w", err)
+				}
+				err = f.SetCellValue(sheet, cell, val)
+				if err != nil {
+					return nil, fmt.Errorf("failed to set cell value: %w", err)
+				}
 			}
 		}
 	}
@@ -187,7 +205,10 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	})
 
 	// 5. Авто-ширина колонок (базовая реализация)
-	f.SetColWidth(sheet, "A", "G", 15)
+	err = f.SetColWidth(sheet, "A", "G", 15)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set coll width: %w", err)
+	}
 
 	winStats := g.getWindowStats(products)
 	doorStats := g.getDoorStats(products)
@@ -195,8 +216,6 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	mosquitoStats := g.getMosquitoStats(products)
 	vodootlivStats := g.getVodootlivStats(products)
 	vitrageStats := g.getVitrageStats(products)
-
-	//slog.Info("VODOOTL", vodootlivStats)
 
 	var allStats []StatsRow
 
@@ -216,7 +235,7 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	startRowStats := len(products) + 10
 	f.SetCellValue(sheet, cellName(1, startRowStats), "Сводная статистика")
 
-	statsHeaderStyle, _ := f.NewStyle(&excelize.Style{
+	statsHeaderStyle, err := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{Bold: true},
 		Fill: excelize.Fill{Type: "pattern", Color: []string{"CCCCCC"}, Pattern: 1},
 		Border: []excelize.Border{
@@ -226,6 +245,9 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			{Type: "right", Color: "000000", Style: 1},
 		},
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to set new style: %w", err)
+	}
 
 	// 2. Пишем шапку таблицы статистики
 	statsHeaders := []string{"Наименование", "Кол-во (шт)", "Площадь (м2)", "Н/час всего", "Н/руб (сумма)"}
@@ -282,7 +304,10 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			//}
 		}
 
-		f.SetColWidth(sheet, "A", "C", 20)
+		err := f.SetColWidth(sheet, "A", "C", 20)
+		if err != nil {
+			return nil, fmt.Errorf("failed to set col width: %w", err)
+		}
 	}
 
 	// Генерируем буфер
