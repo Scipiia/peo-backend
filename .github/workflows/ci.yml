@@ -26,3 +26,8 @@ jobs:
 
       - name: Build migrate
         run: go build ./cmd/migrate
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.4.0
