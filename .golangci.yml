@@ -1,0 +1,18 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - govet        # грубые логические ошибки (то, что поймал go vet)
+    - staticcheck   # мёртвый код, явные баги, deprecated API
+    - unused        # неиспользуемые переменные/функции/импорты
+    - ineffassign   # присвоение значения, которое нигде не читается
+
+issues:
+  exclude-rules:
+    # Существующий сервис генерации Excel — не трогаем errcheck там,
+    # т.к. errcheck пока выключен глобально, но фиксируем это явно
+    # на будущее, когда включим errcheck обратно.
+    - path: internal/service/generate-excel/
+      linters:
+        - errcheck

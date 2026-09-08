@@ -28,12 +28,12 @@ func TestUpdateNormOrder_OK(t *testing.T) {
 		Status:    &status,
 		Operations: []storage.NormOperation{
 			{
-				"cut",
-				"резка",
-				float64(2),
-				float64(10),
-				float64(1.5),
-				nil,
+				Name:            "cut",
+				Label:           "резка",
+				Count:           float64(2),
+				Value:           float64(10),
+				Minutes:         float64(1.5),
+				AssignedWorkers: nil,
 			},
 		},
 	}
@@ -201,12 +201,12 @@ func TestUpdateNormOrder_Error(t *testing.T) {
 				Status:    &status,
 				Operations: []storage.NormOperation{
 					{
-						"cut",
-						"резка",
-						float64(2),
-						float64(10),
-						float64(1.5),
-						nil,
+						Name:            "cut",
+						Label:           "резка",
+						Count:           float64(2),
+						Value:           float64(10),
+						Minutes:         float64(1.5),
+						AssignedWorkers: nil,
 					},
 				},
 			}
