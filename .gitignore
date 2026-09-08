@@ -7,3 +7,6 @@ vendor/
 .idea/
 *.log
 tmp/
+coverage.out
+backend-linux
+norm-service
