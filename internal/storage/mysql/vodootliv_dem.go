@@ -336,10 +336,10 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 		res, err := tx.ExecContext(ctx, `
 			INSERT INTO dem_product_instances_al (
 				order_num, template_code, name, customer, count, total_time,
-				type, part_type, parent_assembly, status, position, sqr, type_izd, profile
+				type, part_type, parent_assembly, status, position, sqr, type_izd, profile, systema
 			) VALUES (
 				?, '0', 'Водоотлив', ?, ?, ?,
-				'vodootliv', 'main', '', ?, 0, ?, 'vo', ''
+				'vodootliv', 'main', '', ?, 0, ?, 'vo', '', ''
 			)
 		`,
 			orderNum,
