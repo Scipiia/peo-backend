@@ -3,6 +3,7 @@ package generate_excel
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"math"
 	"strings"
 	"vue-golang/internal/storage"
@@ -33,7 +34,11 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	reportType := getReportType(filter.Type)
 
 	f := excelize.NewFile()
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			slog.Error(fmt.Sprintf("failed to close excel file: %v", err))
+		}
+	}()
 	sheet := "Отчет ПЭО"
 	err = f.SetSheetName("Sheet1", sheet)
 	if err != nil {
