@@ -12,3 +12,7 @@ linters:
       - path: internal/service/generate-excel/
         linters:
           - errcheck
+          - "-QF1003"  # tagged switch suggestion
+          - "-QF1008"  # embedded field selector
+          - "-QF1011"  # redundant type in var decl
+          - "-S1002"   # == true/false comparison
