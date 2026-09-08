@@ -35,7 +35,10 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	f := excelize.NewFile()
 	defer f.Close()
 	sheet := "Отчет ПЭО"
-	f.SetSheetName("Sheet1", sheet)
+	err = f.SetSheetName("sheet", sheet)
+	if err != nil {
+		return nil, fmt.Errorf("failed set name %w", err)
+	}
 
 	// --- СТИЛИ ---
 	// Жирный шрифт для шапки
@@ -62,8 +65,11 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 
 	// 2. Пишем базовую шапку
 	for i, name := range baseHeaders {
-		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		cell, err := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheet, cell, name)
+		if err != nil {
+			return nil, fmt.Errorf("failed set cell value %w", err)
+		}
 	}
 
 	// 3. Динамическая шапка сотрудников (начинается СРАЗУ после baseHeaders)

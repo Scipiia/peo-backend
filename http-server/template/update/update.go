@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"vue-golang/internal/storage"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type TemplateUpdateProvider interface {
@@ -70,6 +71,11 @@ func UpdateTemplateAdmin(log *slog.Logger, temp TemplateUpdateProvider) http.Han
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		err = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		if err != nil {
+			log.Error(fmt.Sprintf("%s: %v", op, err))
+			http.Error(w, "ошибка обновления шаблона", http.StatusInternalServerError)
+			return
+		}
 	}
 }
