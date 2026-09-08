@@ -20,3 +20,9 @@ jobs:
 
       - name: Run tests
         run: go test ./...
+
+      - name: Build backend
+        run: go build ./cmd/dem
+
+      - name: Build migrate
+        run: go build ./cmd/migrate
