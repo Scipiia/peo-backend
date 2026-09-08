@@ -47,7 +47,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	configClient := auth_ldap.NewConfigAuthenticator(cfg.AdminLogin, cfg.AdminPass, cfg.AuthConfig.AdminPermission)
+	configClient := auth_ldap.NewConfigAuthenticator(cfg.AdminLogin, cfg.AdminPass, cfg.AdminPermission)
 	// TODO если будет авторизация через ldap
 	//ldapClient := auth_ldap.NewLDAPClient(cfg.LDAPConfig)
 	jwtService := auth_ldap.NewJWTService(cfg.JWTConfig)
@@ -72,9 +72,9 @@ func main() {
 	srv := &http.Server{
 		Addr:         cfg.Address,
 		Handler:      routes(app),
-		ReadTimeout:  cfg.HTTPServer.Timeout,
-		WriteTimeout: cfg.HTTPServer.Timeout,
-		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
+		ReadTimeout:  cfg.Timeout,
+		WriteTimeout: cfg.Timeout,
+		IdleTimeout:  cfg.IdleTimeout,
 	}
 
 	go func() {
@@ -157,7 +157,7 @@ func (h *dualHandler) WithGroup(name string) slog.Handler {
 
 func setupLogger(env string) *slog.Logger {
 	// Определяем уровень логирования
-	var level slog.Level = slog.LevelDebug
+	var level = slog.LevelDebug
 	switch env {
 	case envProd:
 		level = slog.LevelInfo

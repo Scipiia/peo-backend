@@ -9,10 +9,11 @@ import (
 	"testing"
 	"vue-golang/internal/storage/mysql"
 
+	"context"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"golang.org/x/net/context"
 )
 
 type GenerateExcelHandlerMock struct {
@@ -20,7 +21,7 @@ type GenerateExcelHandlerMock struct {
 }
 
 func (m *GenerateExcelHandlerMock) GenerateExcel(ctx context.Context, filter mysql.ProductFilter) ([]byte, error) {
-	args := m.Mock.Called(ctx, filter)
+	args := m.Called(ctx, filter)
 
 	if args.Get(0) == nil {
 		return nil, args.Error(1)

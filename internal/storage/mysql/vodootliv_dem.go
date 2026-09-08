@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -308,6 +309,9 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 
 	var existingID int64
 	err = tx.QueryRowContext(ctx, `SELECT id FROM dem_product_instances_al WHERE order_num = ? AND type = 'vodootliv' LIMIT 1 FOR UPDATE`, orderNum).Scan(&existingID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("%s: check existing record: %w", op, err)
+	}
 
 	status := "in_production"
 	var newItem storage.GetOrderDetails

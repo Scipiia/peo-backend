@@ -24,13 +24,13 @@ type MockResultNormSaver struct {
 }
 
 func (m *MockResultNormSaver) SaveNormOrder(ctx context.Context, result storage.OrderNormDetails) (int64, error) {
-	args := m.Mock.Called(ctx, result)
+	args := m.Called(ctx, result)
 
 	return args.Get(0).(int64), args.Error(1)
 }
 
 func (m *MockResultNormSaver) SaveNormOperation(ctx context.Context, OrderID int64, operations []storage.NormOperation) error {
-	args := m.Mock.Called(ctx, OrderID, operations)
+	args := m.Called(ctx, OrderID, operations)
 
 	return args.Error(0)
 }
