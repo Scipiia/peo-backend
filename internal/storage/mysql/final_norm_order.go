@@ -141,18 +141,15 @@ type ProductFilter struct {
 	Type     []string
 }
 
-// Константы статусов
 const (
 	StatusAssigned = "assigned"
 	StatusFinal    = "final"
 )
 
-// buildProductFilters формирует SQL условия и аргументы
 func buildProductFilters(f ProductFilter) (string, []interface{}) {
 	var conditions []string
 	var args []interface{}
 
-	// Стандартные условия (всегда присутствуют)
 	conditions = append(conditions, "p.status IN (?, ?)")
 	args = append(args, StatusAssigned, StatusFinal)
 
@@ -169,7 +166,6 @@ func buildProductFilters(f ProductFilter) (string, []interface{}) {
 		args = append(args, "%"+f.OrderNum+"%")
 	}
 
-	// Фильтр по типам
 	var validTypes []string
 	for _, t := range f.Type {
 		if t != "" {
@@ -203,12 +199,9 @@ func toInterfaceSlice(ids []int64) []interface{} {
 	return res
 }
 
-// --- Основные методы хранилища ---
-
 func (s *Storage) GetPEOProductsByCategory(ctx context.Context, filter ProductFilter) ([]storage.PEOProduct, []storage.GetWorkers, error) {
 	const op = "storage.mysql.GetPEOProductsByCategory"
 
-	// 1. Загружаем основные данные продуктов
 	productsMap, productIDs, err := s.fetchProducts(ctx, filter)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", op, err)
@@ -217,7 +210,6 @@ func (s *Storage) GetPEOProductsByCategory(ctx context.Context, filter ProductFi
 		return []storage.PEOProduct{}, []storage.GetWorkers{}, nil
 	}
 
-	// 2. Получаем список уникальных сотрудников для этих продуктов
 	employees, err := s.fetchEmployeesByProducts(ctx, productIDs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", op, err)
@@ -226,7 +218,6 @@ func (s *Storage) GetPEOProductsByCategory(ctx context.Context, filter ProductFi
 		return s.mapToOrderedSlice(productsMap, productIDs), []storage.GetWorkers{}, nil
 	}
 
-	// 3. Обогащаем продукты данными о затраченном времени
 	if err := s.enrichWithExecutors(ctx, productsMap, productIDs, employees); err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -234,7 +225,6 @@ func (s *Storage) GetPEOProductsByCategory(ctx context.Context, filter ProductFi
 	return s.mapToOrderedSlice(productsMap, productIDs), employees, nil
 }
 
-// fetchProducts загружает продукты и сохраняет порядок ID
 func (s *Storage) fetchProducts(ctx context.Context, f ProductFilter) (map[int64]*storage.PEOProduct, []int64, error) {
 	whereClause, args := buildProductFilters(f)
 
@@ -279,7 +269,6 @@ func (s *Storage) fetchProducts(ctx context.Context, f ProductFilter) (map[int64
 			return nil, nil, err
 		}
 
-		// Маппинг Null-типов
 		if parentID.Valid {
 			p.ParentProductID = &parentID.Int64
 		}
@@ -305,7 +294,6 @@ func (s *Storage) fetchProducts(ctx context.Context, f ProductFilter) (map[int64
 	return products, order, nil
 }
 
-// fetchEmployeesByProducts получает список активных сотрудников для набора продуктов
 func (s *Storage) fetchEmployeesByProducts(ctx context.Context, productIDs []int64) ([]storage.GetWorkers, error) {
 	query := fmt.Sprintf(`
 		SELECT DISTINCT e.id, e.name
@@ -331,7 +319,6 @@ func (s *Storage) fetchEmployeesByProducts(ctx context.Context, productIDs []int
 	return employees, nil
 }
 
-// enrichWithExecutors загружает детальную статистику исполнителей в объекты продуктов
 func (s *Storage) enrichWithExecutors(ctx context.Context, products map[int64]*storage.PEOProduct, prodIDs []int64, employees []storage.GetWorkers) error {
 	empIDs := make([]int64, len(employees))
 	for i, e := range employees {
@@ -365,7 +352,6 @@ func (s *Storage) enrichWithExecutors(ctx context.Context, products map[int64]*s
 	return nil
 }
 
-// mapToOrderedSlice преобразует карту обратно в слайс, сохраняя порядок из БД
 func (s *Storage) mapToOrderedSlice(m map[int64]*storage.PEOProduct, order []int64) []storage.PEOProduct {
 	res := make([]storage.PEOProduct, 0, len(order))
 	for _, id := range order {
