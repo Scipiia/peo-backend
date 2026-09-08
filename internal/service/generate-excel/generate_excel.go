@@ -35,7 +35,7 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	f := excelize.NewFile()
 	defer f.Close()
 	sheet := "Отчет ПЭО"
-	err = f.SetSheetName("sheet", sheet)
+	err = f.SetSheetName("Sheet1", sheet)
 	if err != nil {
 		return nil, fmt.Errorf("failed set name %w", err)
 	}
@@ -66,9 +66,11 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	// 2. Пишем базовую шапку
 	for i, name := range baseHeaders {
 		cell, err := excelize.CoordinatesToCellName(i+1, 1)
-		f.SetCellValue(sheet, cell, name)
 		if err != nil {
-			return nil, fmt.Errorf("failed set cell value %w", err)
+			return nil, fmt.Errorf("failed to get cell name: %w", err)
+		}
+		if err := f.SetCellValue(sheet, cell, name); err != nil {
+			return nil, fmt.Errorf("failed set cell value: %w", err)
 		}
 	}
 
