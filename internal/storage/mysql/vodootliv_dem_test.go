@@ -1098,10 +1098,10 @@ func TestSaveNashchelnikNorm_CreateNew_OK(t *testing.T) {
 	mock.ExpectExec(regexp.QuoteMeta(`
 		INSERT INTO dem_product_instances_al (
 			order_num, template_code, name, customer, count, total_time,
-			type, part_type, parent_assembly, status, position, sqr, type_izd, profile
+			type, part_type, parent_assembly, status, position, sqr, type_izd, profile, systema
 		) VALUES (
 			?, '0', 'Водоотлив', ?, ?, ?,
-			'vodootliv', 'main', '', ?, 0, ?, 'vo', ''
+			'vodootliv', 'main', '', ?, 0, ?, 'vo', '', ''
 		)
 	`)).
 		WithArgs(
