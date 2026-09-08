@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	auth_ldap "vue-golang/internal/auth-ldap"
@@ -69,7 +70,11 @@ func HandleLogin(log *slog.Logger, auth Authenticator, tokenGen TokenGenerator) 
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		err = json.NewEncoder(w).Encode(resp)
+		if err != nil {
+			log.Error(fmt.Sprintf("%s: %v", op, err))
+			return
+		}
 	}
 }
 
@@ -94,6 +99,10 @@ func HandleTestProtected(log *slog.Logger) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		err := json.NewEncoder(w).Encode(resp)
+		if err != nil {
+			log.Error(fmt.Sprintf("%s: %v", op, err))
+			return
+		}
 	}
 }

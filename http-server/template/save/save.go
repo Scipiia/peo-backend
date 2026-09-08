@@ -75,10 +75,9 @@ func SaveTemplateAdmin(log *slog.Logger, temp TemplateCreateProvider) http.Handl
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "created"})
+		err = json.NewEncoder(w).Encode(map[string]string{"status": "created"})
 		if err != nil {
 			log.Error(fmt.Sprintf("%s: %v", op, err))
-			http.Error(w, "ошибка сохранения шаблона", http.StatusInternalServerError)
 			return
 		}
 	}

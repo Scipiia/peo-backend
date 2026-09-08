@@ -74,7 +74,6 @@ func UpdateTemplateAdmin(log *slog.Logger, temp TemplateUpdateProvider) http.Han
 		err = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 		if err != nil {
 			log.Error(fmt.Sprintf("%s: %v", op, err))
-			http.Error(w, "ошибка обновления шаблона", http.StatusInternalServerError)
 			return
 		}
 	}
