@@ -7,6 +7,9 @@ vendor/
 .idea/
 *.log
 tmp/
-coverage.out
+coverage
 backend-linux
 norm-service
+migrate
+mysql
+/bin

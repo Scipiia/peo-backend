@@ -1,0 +1,34 @@
+version: "3"
+
+
+tasks:
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./...
+
+  lint:
+    desc: Run golangci-lint
+    cmds: 
+      - golangci-lint run ./...
+
+  build:
+    desc: Build backend and migrate binaries
+    cmds:
+      - go build -o bin/backend ./cmd/dem
+      - go build -o bin/migrate ./cmd/migrate
+
+  up:
+    desc: Start the full stack via docker compose
+    cmds:
+      - docker compose up --build
+
+  down:
+    desc: Stop and remove containers and volumes
+    cmds:
+      - docker compose down -v
+
+  logs:
+    desc: Follow logs from all containers
+    cmds:
+      - docker compose logs -f
