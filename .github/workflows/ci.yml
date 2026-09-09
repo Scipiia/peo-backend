@@ -33,5 +33,5 @@ jobs:
           version: v2.4.0
 
       - name: Build docker image
-        run: docker build -t peo-backend:${{ github.sha }}
+        run: docker build -t peo-backend:${{ github.sha }} .
 
