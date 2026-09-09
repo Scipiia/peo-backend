@@ -5,10 +5,10 @@ services:
     restart: unless-stopped
 
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: aaaa
-      MYSQL_USER: valera
-      MYSQL_PASSWORD: pass
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
 
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
