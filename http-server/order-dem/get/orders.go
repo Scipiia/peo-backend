@@ -35,14 +35,14 @@ func GetOrdersFilter(log *slog.Logger, getOrders OrdersGetter) http.HandlerFunc 
 
 			year, err = strconv.Atoi(yearStr)
 			if err != nil {
-				log.Error("Invalid year", slog.String("error", err.Error()))
+				log.With(slog.String("op", op), slog.String("error", err.Error())).Error("некорректный год")
 				http.Error(w, "Invalid year", http.StatusBadRequest)
 				return
 			}
 
 			month, err = strconv.Atoi(monthStr)
 			if err != nil {
-				log.Error("Invalid month", slog.String("error", err.Error()))
+				log.With(slog.String("op", op), slog.String("error", err.Error())).Error("некорректный месяц")
 				http.Error(w, "Invalid month", http.StatusBadRequest)
 				return
 			}
@@ -54,7 +54,7 @@ func GetOrdersFilter(log *slog.Logger, getOrders OrdersGetter) http.HandlerFunc 
 		// Передаём в storage
 		orders, err := getOrders.GetOrdersMonth(ctx, year, month, search)
 		if err != nil {
-			log.Error("не удалось получить заказы из дем", slog.String("error", err.Error()))
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка получения заказов из дем")
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}

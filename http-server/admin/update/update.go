@@ -3,12 +3,13 @@ package update
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-chi/chi/v5"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
 	"vue-golang/internal/storage"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type UpdateCoefProvider interface {
@@ -36,7 +37,7 @@ func UpdateCoefficientAdmin(log *slog.Logger, update UpdateCoefProvider) http.Ha
 
 		err := update.UpdateCoefficientPEOAdmin(ctx, coeffs)
 		if err != nil {
-			log.Error("Ошибка обновления коэффициентов", "error", err)
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка обновления коэффициентов")
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
 			return
 		}
@@ -72,7 +73,7 @@ func UpdateEmployeesAdmin(log *slog.Logger, update UpdateCoefProvider) http.Hand
 
 		err = update.UpdateAllEmployeesAdmin(ctx, id, employees)
 		if err != nil {
-			log.Error("Ошибка обновления всех работников", "error", err)
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка обновления всех сотрудников")
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
 			return
 		}

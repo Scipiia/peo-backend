@@ -19,7 +19,7 @@ func TestGetTemplateByCode_OK(t *testing.T) {
 
 	stor := &Storage{db: db}
 
-	var Code string = "2"
+	var Code = "2"
 
 	operationsJSON := `[{"name":"razmetka","label":"Разметка","value":1.5}]`
 	rulesJSON := `[{"field":"a","operator":">","value":100}]`
@@ -135,7 +135,7 @@ func TestGetTemplateByCode_Error(t *testing.T) {
 
 			stor := &Storage{db: db}
 
-			var Code string = "2"
+			var Code = "2"
 
 			tt.setupMock(mock, Code)
 
@@ -201,7 +201,7 @@ func TestUpdateTemplateAdmin_OK(t *testing.T) {
 		WithArgs("2", "category", true, "name Дверь 2п", "profile", "systema", "izd", "[{}]", "head_name", 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	var id int = 1
+	var id = 1
 	req := storage.TemplateAdmin{
 		Code:      "2",
 		Category:  "category",
@@ -231,7 +231,7 @@ func TestUpdateTemplateAdmin_UpdateTemplateError(t *testing.T) {
 		WithArgs("2", "category", true, "name Дверь 2п", "profile", "systema", "izd", "[{}]", "head_name", 1).
 		WillReturnError(errors.New("ошибка обновления шаблона нормирования"))
 
-	var id int = 1
+	var id = 1
 	req := storage.TemplateAdmin{
 		Code:      "2",
 		Category:  "category",

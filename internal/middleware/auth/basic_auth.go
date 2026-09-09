@@ -5,8 +5,12 @@ import (
 	"encoding/base64"
 	"net/http"
 	"strings"
-	"vue-golang/internal/auth-ldap"
+	auth_ldap "vue-golang/internal/auth-ldap"
 )
+
+type contextKey string
+
+const userClaimsKey contextKey = "user_claims"
 
 func BasicAuth(username, password string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -72,7 +76,7 @@ func JWTAuth(jwtService *auth_ldap.JWTService) func(next http.Handler) http.Hand
 			}
 
 			// Кладем claims в контекст запроса, чтобы хэндлеры могли их читать
-			ctx := context.WithValue(r.Context(), "user_claims", claims)
+			ctx := context.WithValue(r.Context(), userClaimsKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -81,7 +85,7 @@ func JWTAuth(jwtService *auth_ldap.JWTService) func(next http.Handler) http.Hand
 func RequirePermission(permission string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			claims, ok := r.Context().Value("user_claims").(*auth_ldap.CustomClaims)
+			claims, ok := r.Context().Value(userClaimsKey).(*auth_ldap.CustomClaims)
 			if !ok {
 				http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
 				return

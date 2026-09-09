@@ -26,7 +26,7 @@ func GetOrderDetails(log *slog.Logger, order OrderDetailsGetter) http.HandlerFun
 
 		details, err := order.GetOrderDetails(ctx, orderNum)
 		if err != nil {
-			log.Error("не удалось получить детали заказа из дема", slog.String("error", err.Error()))
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка получения заказов из дем")
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}

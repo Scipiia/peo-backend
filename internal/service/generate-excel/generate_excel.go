@@ -55,16 +55,17 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 
 	// 2. ФОРМИРУЕМ ШАПКУ
 	var baseHeaders []string
-	if reportType == "window" {
+	switch reportType {
+	case "window":
 		baseHeaders = []string{"Спецификация", "№ Заказа", "Корп/дил", "Заказчик", "Вид продукции", "Система", "Наименование", "Профиль", "Кол-во", "Площадь", "Н/час",
 			"Изготовитель", "Н/руб", "защ. Пленки", "пленка н/р"}
-	} else if reportType == "loggia" {
+	case "loggia":
 		baseHeaders = []string{"Витраж", "№ Заказа", "Корп/дил", "Заказчик", "Наименование", "Кол-во", "Площадь", "Площадь створки", "Н/час", "Изготовитель", "Н/час", "Н/руб", "Разница"}
-	} else if reportType == "mosquito" {
+	case "mosquito":
 		baseHeaders = []string{"№ Заказа", "№ Партии", "Заказчик", "Наименование", "Кол-во", "Площадь", "Н/час", "Изготовитель", "Тип клиента", "Вид изделия", "Н/час", "Н/руб", "VSN"}
-	} else if reportType == "vodootliv" {
+	case "vodootliv":
 		baseHeaders = []string{"№ Заказа", "Заказчик", "Наименование", "Кол-во", "Площадь", "Н/час", "Н/руб", "Изготовитель", "Тип клиента", "Вид изделия"}
-	} else if reportType == "vitrage" {
+	case "vitrage":
 		baseHeaders = []string{"№ Заказа", "Тип клиента", "Заказчик", "Наименование", "Система", "Категория", "Система", "Кол-во", "Площадь", "Н/час", "Н/руб", "Изготовитель"}
 	}
 
@@ -109,24 +110,22 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 	for rowIdx, p := range products {
 		rowNum := rowIdx + 2
 
-		if reportType == "window" {
-			// Заполняем 15 колонок для Окон
-			f.SetCellValue(sheet, cellName(1, rowNum), p.ParentAssembly)    // Спецификация
-			f.SetCellValue(sheet, cellName(2, rowNum), p.OrderNum)          // № Заказа
-			f.SetCellValue(sheet, cellName(3, rowNum), p.CustomerType)      // Корп/дил
-			f.SetCellValue(sheet, cellName(4, rowNum), p.Customer)          // Заказчик
-			f.SetCellValue(sheet, cellName(5, rowNum), convertType(p.Type)) // Вид продукции
-			f.SetCellValue(sheet, cellName(6, rowNum), p.Systema)           // Система
-			f.SetCellValue(sheet, cellName(7, rowNum), p.TypeIzd)           // Наименование
-			f.SetCellValue(sheet, cellName(8, rowNum), p.Profile)           // Профиль
-			f.SetCellValue(sheet, cellName(9, rowNum), p.Count)             // Кол-во
-			f.SetCellValue(sheet, cellName(10, rowNum), round(p.Sqr))       // Площадь
-			f.SetCellValue(sheet, cellName(11, rowNum), round(p.TotalTime)) // Н/час
+		switch reportType {
+		case "window":
+			f.SetCellValue(sheet, cellName(1, rowNum), p.ParentAssembly)
+			f.SetCellValue(sheet, cellName(2, rowNum), p.OrderNum)
+			f.SetCellValue(sheet, cellName(3, rowNum), p.CustomerType)
+			f.SetCellValue(sheet, cellName(4, rowNum), p.Customer)
+			f.SetCellValue(sheet, cellName(5, rowNum), convertType(p.Type))
+			f.SetCellValue(sheet, cellName(6, rowNum), p.Systema)
+			f.SetCellValue(sheet, cellName(7, rowNum), p.TypeIzd)
+			f.SetCellValue(sheet, cellName(8, rowNum), p.Profile)
+			f.SetCellValue(sheet, cellName(9, rowNum), p.Count)
+			f.SetCellValue(sheet, cellName(10, rowNum), round(p.Sqr))
+			f.SetCellValue(sheet, cellName(11, rowNum), round(p.TotalTime))
 			f.SetCellValue(sheet, cellName(12, rowNum), p.Brigade)
 			f.SetCellValue(sheet, cellName(13, rowNum), round(p.NormMoney))
-		} else if reportType == "loggia" {
-			// Заполняем 13 колонок для Лоджий
-			//"Витраж", "№ Заказа", "Корп/дил", "Заказчик", "Наименование", "Кол-во", "Площадь", "Площадь ", "Н/час", "Изготовитель", "Н/час", "Н/руб", "Разница"}
+		case "loggia":
 			f.SetCellValue(sheet, cellName(1, rowNum), p.ParentAssembly)
 			f.SetCellValue(sheet, cellName(2, rowNum), p.OrderNum)
 			f.SetCellValue(sheet, cellName(3, rowNum), p.CustomerType)
@@ -138,7 +137,7 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			f.SetCellValue(sheet, cellName(9, rowNum), round(p.TotalTime))
 			f.SetCellValue(sheet, cellName(10, rowNum), p.Brigade)
 			f.SetCellValue(sheet, cellName(11, rowNum), round(p.NormMoney))
-		} else if reportType == "mosquito" {
+		case "mosquito":
 			f.SetCellValue(sheet, cellName(1, rowNum), p.OrderNum)
 			f.SetCellValue(sheet, cellName(2, rowNum), "")
 			f.SetCellValue(sheet, cellName(3, rowNum), p.Customer)
@@ -152,7 +151,7 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			f.SetCellValue(sheet, cellName(11, rowNum), round(p.TotalTime))
 			f.SetCellValue(sheet, cellName(12, rowNum), round(p.NormMoney))
 			f.SetCellValue(sheet, cellName(13, rowNum), "")
-		} else if reportType == "vodootliv" {
+		case "vodootliv":
 			f.SetCellValue(sheet, cellName(1, rowNum), p.OrderNum)
 			f.SetCellValue(sheet, cellName(2, rowNum), p.Customer)
 			f.SetCellValue(sheet, cellName(3, rowNum), p.Name)
@@ -163,7 +162,7 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 			f.SetCellValue(sheet, cellName(8, rowNum), "-")
 			f.SetCellValue(sheet, cellName(9, rowNum), p.CustomerType)
 			f.SetCellValue(sheet, cellName(10, rowNum), p.TypeIzd)
-		} else if reportType == "vitrage" {
+		case "vitrage":
 			f.SetCellValue(sheet, cellName(1, rowNum), p.OrderNum)
 			f.SetCellValue(sheet, cellName(2, rowNum), p.CustomerType)
 			f.SetCellValue(sheet, cellName(3, rowNum), p.Customer)
@@ -219,16 +218,17 @@ func (g *GenerateExcelService) GenerateExcel(ctx context.Context, filter mysql.P
 
 	var allStats []StatsRow
 
-	if reportType == "window" {
+	switch reportType {
+	case "window":
 		allStats = append(allStats, winStats...)
 		allStats = append(allStats, doorStats...)
-	} else if reportType == "loggia" {
+	case "loggia":
 		allStats = append(allStats, loggiaStats...)
-	} else if reportType == "mosquito" {
+	case "mosquito":
 		allStats = append(allStats, mosquitoStats...)
-	} else if reportType == "vodootliv" {
+	case "vodootliv":
 		allStats = append(allStats, vodootlivStats...)
-	} else if reportType == "vitrage" {
+	case "vitrage":
 		allStats = append(allStats, vitrageStats...)
 	}
 
@@ -439,19 +439,21 @@ func (g *GenerateExcelService) getDoorStats(products []storage.PEOProduct) []Sta
 		typeIzd := strings.ToLower(strings.TrimSpace(p.TypeIzd))
 
 		if p.Type == "door" {
-			if typeIzd == "1п" || typeIzd == "1пт" {
+			switch typeIzd {
+			case "1п", "1пт":
 				addStats(&door1P, p)
-			} else if typeIzd == "1.5п" || typeIzd == "1.5пт" {
+			case "1.5п", "1.5пт":
 				addStats(&door15P, p)
-			} else if typeIzd == "2п" || typeIzd == "2пт" {
+			case "2п", "2пт":
 				addStats(&door2P, p)
-			} else {
+			default:
 				addStats(&unknown, p)
 			}
 
-			if systema == "х" || systema == "x" {
+			switch systema {
+			case "х", "x":
 				addStats(&coldDoor, p)
-			} else if systema == "т" {
+			case "т":
 				addStats(&hotDoor, p)
 			}
 		}
@@ -487,19 +489,21 @@ func (g *GenerateExcelService) getLoggiaStats(products []storage.PEOProduct) []S
 
 		if p.Type == "loggia" {
 			addStats(&stvAll, p)
-			if typeIzd == "створка" {
+
+			switch typeIzd {
+			case "створка":
 				addStats(&stv, p)
-			} else if typeIzd == "2ств.лр" {
+			case "2ств.лр":
 				addStats(&stvTwo, p)
-			} else if typeIzd == "3ств.лр" {
+			case "3ств.лр":
 				addStats(&stvThree, p)
-			} else if typeIzd == "4ств.лр" {
+			case "4ств.лр":
 				addStats(&stvFour, p)
-			} else if typeIzd == "5ств.лр" {
+			case "5ств.лр":
 				addStats(&stvFive, p)
-			} else if typeIzd == "6ств.лр" {
+			case "6ств.лр":
 				addStats(&stvSix, p)
-			} else {
+			default:
 				addStats(&unknown, p)
 			}
 		}

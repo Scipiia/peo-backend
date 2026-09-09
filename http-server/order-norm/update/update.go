@@ -116,18 +116,18 @@ func UpdateCancelStatus(log *slog.Logger, update ResultUpdateNorm) http.HandlerF
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			log.Error("Failed to decode request body", "error", err)
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка декодирования JSON")
 			http.Error(w, "Invalid request payload", http.StatusBadRequest)
 			return
 		}
 
 		err := update.UpdateStatus(ctx, req.RootProductID, "cancel")
 		if err != nil {
-			log.Error("Failed to update status to 'cancelled'", "error", err, "root_product_id", req.RootProductID)
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("Failed to update status to 'cancelled'")
 			http.Error(w, "Failed to cancel order", http.StatusInternalServerError)
 			return
 		}
 
-		log.Info("Order successfully cancelled", "root_product_id", req.RootProductID)
+		//log.Info("Order successfully cancelled", "root_product_id", req.RootProductID)
 	}
 }

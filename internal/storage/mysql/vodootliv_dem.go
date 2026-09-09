@@ -133,9 +133,10 @@ func (s *Storage) importGutterFromLegacy(ctx context.Context, legacyID int64, or
 		for tRows.Next() {
 			var mat, cnt int
 			if err := tRows.Scan(&mat, &cnt); err == nil {
-				if mat == 5 || mat == 8 {
+				switch mat {
+				case 5, 8:
 					typeCounts["ocn"] += cnt
-				} else if mat == 1 {
+				case 1:
 					typeCounts["vo"] += cnt
 				}
 			}
@@ -303,7 +304,7 @@ func (s *Storage) SaveNashchelnikNorm(ctx context.Context, legacyID int64, order
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("Ошибка транзакции %s, %w", op, err)
+		return nil, fmt.Errorf("ошибка транзакции %s, %w", op, err)
 	}
 	defer tx.Rollback()
 

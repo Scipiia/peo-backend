@@ -17,7 +17,7 @@ func TestUpdateNormOrder_OK(t *testing.T) {
 	defer db.Close()
 
 	stor := &Storage{db: db}
-	var status string = "assigned"
+	var status = "assigned"
 	var ID int64 = 100
 
 	req := storage.UpdateOrderDetails{
@@ -190,7 +190,7 @@ func TestUpdateNormOrder_Error(t *testing.T) {
 
 			stor := &Storage{db: db}
 
-			var status string = "assigned"
+			var status = "assigned"
 			var ID int64 = 100
 
 			req := storage.UpdateOrderDetails{
@@ -228,14 +228,14 @@ func TestUpdateFinalOrder_OK(t *testing.T) {
 	stor := &Storage{db: db}
 
 	var ID int64 = 100
-	var Brigade string = "door"
+	var Brigade = "door"
 	var NormMoney float64 = 100
-	var ParentAssembly string = "parent_assembly"
-	var Profile string = "profile"
+	var ParentAssembly = "parent_assembly"
+	var Profile = "profile"
 	var Sqr float64 = 100
-	var Systema string = "x"
-	var TypeIzd string = "type_izd"
-	var CustomerType string = "customer_type"
+	var Systema = "x"
+	var TypeIzd = "type_izd"
+	var CustomerType = "customer_type"
 	var Coefficient float64 = 100
 	var SqrStv float64 = 100
 
@@ -274,14 +274,14 @@ func TestUpdateFinalOrder_UpdateError(t *testing.T) {
 	stor := &Storage{db: db}
 
 	var ID int64 = 100
-	var Brigade string = "door"
+	var Brigade = "door"
 	var NormMoney float64 = 100
-	var ParentAssembly string = "parent_assembly"
-	var Profile string = "profile"
+	var ParentAssembly = "parent_assembly"
+	var Profile = "profile"
 	var Sqr float64 = 100
-	var Systema string = "x"
-	var TypeIzd string = "type_izd"
-	var CustomerType string = "customer_type"
+	var Systema = "x"
+	var TypeIzd = "type_izd"
+	var CustomerType = "customer_type"
 	var Coefficient float64 = 100
 	var SqrStv float64 = 100
 
@@ -320,7 +320,7 @@ func TestUpdateStatus_OK(t *testing.T) {
 	stor := &Storage{db: db}
 
 	var ID int64 = 100
-	var Status string = "assigned"
+	var Status = "assigned"
 
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE dem_product_instances_al SET status = ? WHERE id = ? OR parent_product_id = ?")).
 		WithArgs(
@@ -350,7 +350,7 @@ func TestUpdateStatus_UpdateStatusError(t *testing.T) {
 	stor := &Storage{db: db}
 
 	var ID int64 = 100
-	var Status string = "assigned"
+	var Status = "assigned"
 
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE dem_product_instances_al SET status = ? WHERE id = ? OR parent_product_id = ?")).
 		WithArgs(
@@ -374,7 +374,7 @@ func TestUpdateStatus_DeleteExecutorsError(t *testing.T) {
 	stor := &Storage{db: db}
 
 	var ID int64 = 100
-	var Status string = "assigned"
+	var Status = "assigned"
 
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE dem_product_instances_al SET status = ? WHERE id = ? OR parent_product_id = ?")).
 		WithArgs(

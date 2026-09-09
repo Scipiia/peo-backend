@@ -152,7 +152,7 @@ type MockSaveNashchelnikSaver struct {
 }
 
 func (m *MockSaveNashchelnikSaver) SaveNashchelnikNorm(ctx context.Context, legacyID int64, orderNum string, a, b, c, d, sqr, count float64, opsFromFront []storage.NormOperation) (*storage.GetOrderDetails, error) {
-	args := m.Mock.Called(ctx, legacyID, orderNum, a, b, c, d, sqr, count, opsFromFront)
+	args := m.Called(ctx, legacyID, orderNum, a, b, c, d, sqr, count, opsFromFront)
 
 	return args.Get(0).(*storage.GetOrderDetails), args.Error(1)
 }

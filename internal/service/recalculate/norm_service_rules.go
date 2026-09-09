@@ -3,11 +3,12 @@ package recalculate
 import (
 	"context"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"math"
 	"strings"
 	"vue-golang/internal/constants"
 	"vue-golang/internal/storage"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type NormStorage interface {
@@ -144,7 +145,7 @@ func (s *NormService) CalculateNorm(ctx context.Context, orderNum string, pos in
 	}
 
 	var dopInfoToUse []*storage.DopInfoDemPrice
-	if permisDopMaterial == true {
+	if permisDopMaterial {
 		dopInfoToUse = dopInfo
 	} else {
 		dopInfoToUse = []*storage.DopInfoDemPrice{}

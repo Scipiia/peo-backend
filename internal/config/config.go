@@ -78,7 +78,7 @@ func MustConfig() *Config {
 		log.Fatalf("cannot read env: %s", err)
 	}
 
-	log.Printf("config loaded: env=%s db_host=%s db_name=%s http=%s", cfg.Env, cfg.DBHost, cfg.DBName, cfg.HTTPServer.Address)
+	log.Printf("config loaded: env=%s db_host=%s db_name=%s http=%s", cfg.Env, cfg.DBHost, cfg.DBName, cfg.Address)
 
 	return &cfg
 }

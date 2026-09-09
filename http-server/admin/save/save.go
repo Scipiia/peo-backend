@@ -35,7 +35,7 @@ func SaveEmployerAdmin(log *slog.Logger, emp EmployeesProvider) http.HandlerFunc
 
 		err = emp.CreateEmployeeAdmin(ctx, employer)
 		if err != nil {
-			log.Error("Ошибка добавления сотрудника", "error", err)
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка добавления сотрудников")
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
 			return
 		}

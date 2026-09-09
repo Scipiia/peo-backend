@@ -3,12 +3,13 @@ package recalculate_norm
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"time"
 	"vue-golang/internal/service/recalculate"
 	"vue-golang/internal/storage"
+
+	"github.com/go-chi/render"
 )
 
 type NormCalculator interface {
@@ -44,14 +45,13 @@ func CalculateNormOperations(log *slog.Logger, calc NormCalculator) http.Handler
 		}
 
 		log.Info("Calculating norm", "type", req.TypeIzd, "order", req.OrderNum, "pos", req.Position, "permis", req.PermisDopMaterial)
-		//req.PermisDopMaterial = true
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		norm, ctxData, err := calc.CalculateNorm(ctx, req.OrderNum, req.Position, req.TypeIzd, req.TemplateCode, req.ItemCount, req.PermisDopMaterial)
 		if err != nil {
-			log.Error("Failed to recalculate norm", slog.String("error", err.Error()))
+			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка автоматического пересчета норм")
 			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}

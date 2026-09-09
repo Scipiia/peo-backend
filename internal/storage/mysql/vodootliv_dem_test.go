@@ -127,7 +127,7 @@ func TestGetGutterOrderDetails_FindByOrderNum_OK(t *testing.T) {
 
 	var reqID int64 = 1
 	var LegacyID int64 = 100
-	var reqOrderNum string = "123"
+	var reqOrderNum = "123"
 
 	productRows := sqlmock.NewRows([]string{
 		"id",

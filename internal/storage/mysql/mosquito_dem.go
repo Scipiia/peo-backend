@@ -143,9 +143,9 @@ func (s *Storage) importMosquitoFromLegacy(ctx context.Context, legacyID int64, 
 	case vsn > 0 && reg > 0:
 		typeIzd = fmt.Sprintf("%dvsn+%dms", vsn, reg)
 	case vsn > 0:
-		typeIzd = fmt.Sprintf("vsn")
+		typeIzd = "vsn"
 	default:
-		typeIzd = fmt.Sprintf("ms")
+		typeIzd = "ms"
 	}
 
 	detail.Operations = make([]storage.NormOperation, 0)

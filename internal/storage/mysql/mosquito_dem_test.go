@@ -178,8 +178,6 @@ func TestImportMosquitoFromLegacy_OK(t *testing.T) {
 
 	stor := &Storage{db: db}
 
-	const reqID int64 = 1
-
 	const (
 		legacyID  int64 = 100
 		orderNum        = "123"
@@ -270,8 +268,6 @@ func TestImportMosquitoFromLegacy_OrderNotFound(t *testing.T) {
 
 	stor := &Storage{db: db}
 
-	const reqID int64 = 1
-
 	const (
 		legacyID  int64 = 100
 		orderNum        = "123"
@@ -300,8 +296,6 @@ func TestTestImportMosquitoFromLegacy_TypeError(t *testing.T) {
 	defer db.Close()
 
 	stor := &Storage{db: db}
-
-	const reqID int64 = 1
 
 	const (
 		legacyID  int64 = 100
@@ -344,8 +338,6 @@ func TestTestImportMosquitoFromLegacy_NoOperations(t *testing.T) {
 	defer db.Close()
 
 	stor := &Storage{db: db}
-
-	const reqID int64 = 1
 
 	const (
 		legacyID  int64 = 100
@@ -410,8 +402,6 @@ func TestImportMosquitoFromLegacy_InsertOperationsError(t *testing.T) {
 	defer db.Close()
 
 	stor := &Storage{db: db}
-
-	const reqID int64 = 1
 
 	const (
 		legacyID  int64 = 100
