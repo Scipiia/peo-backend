@@ -2,20 +2,19 @@ package get
 
 import (
 	"context"
-	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"time"
 	"vue-golang/internal/storage"
+
+	"github.com/go-chi/render"
 )
 
-type AdminCoefProvider interface {
+type AdminCoefGetter interface {
 	GetAllCoefficientAdmin(ctx context.Context) ([]*storage.CoefficientPEOAdmin, error)
-	GetAllEmployeesAdmin(ctx context.Context) ([]*storage.EmployeesAdmin, error)
-	GetAllTeamsAdmin(ctx context.Context) ([]*storage.TeamAdmin, error)
 }
 
-func GetCoefficientAdmin(log *slog.Logger, coef AdminCoefProvider) http.HandlerFunc {
+func GetCoefficientAdmin(log *slog.Logger, coef AdminCoefGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.admin.GetCoefficientAdmin"
 
@@ -30,12 +29,14 @@ func GetCoefficientAdmin(log *slog.Logger, coef AdminCoefProvider) http.HandlerF
 		}
 
 		render.JSON(w, r, coef)
-
-		w.WriteHeader(http.StatusOK)
 	}
 }
 
-func GetAllEmployeesAdmin(log *slog.Logger, emp AdminCoefProvider) http.HandlerFunc {
+type AllEmployeesAdminGetter interface {
+	GetAllEmployeesAdmin(ctx context.Context) ([]*storage.EmployeesAdmin, error)
+}
+
+func GetAllEmployeesAdmin(log *slog.Logger, emp AllEmployeesAdminGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.admin.GetAllEmployeesAdmin"
 
@@ -55,7 +56,11 @@ func GetAllEmployeesAdmin(log *slog.Logger, emp AdminCoefProvider) http.HandlerF
 	}
 }
 
-func GetAllTeams(log *slog.Logger, emp AdminCoefProvider) http.HandlerFunc {
+type AdminAllTeamsGetter interface {
+	GetAllTeamsAdmin(ctx context.Context) ([]*storage.TeamAdmin, error)
+}
+
+func GetAllTeams(log *slog.Logger, emp AdminAllTeamsGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.admin.GetAllTeams"
 
@@ -70,7 +75,5 @@ func GetAllTeams(log *slog.Logger, emp AdminCoefProvider) http.HandlerFunc {
 		}
 
 		render.JSON(w, r, teams)
-
-		w.WriteHeader(http.StatusOK)
 	}
 }

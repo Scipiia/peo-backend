@@ -32,9 +32,6 @@ import (
 func routes(app *App) *chi.Mux {
 	router := chi.NewRouter()
 
-	//adminUser := "admin"
-	//adminPass := "your-secure-password"
-
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:8081", "http://localhost:5173"}, // Разрешаем запросы с фронтенда
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -51,68 +48,67 @@ func routes(app *App) *chi.Mux {
 	router.Use(middleware.Recoverer)
 	//router.Use(middleware.URLFormat)
 
-	//TODO login
+	// login
 	router.Post("/api/auth/login", authLDAP.HandleLogin(app.Log, app.ConfigClient, app.JWTService))
 	router.With(
 		auth.JWTAuth(app.JWTService),
 		auth.RequirePermission("norms:read"),
 	).Get("/api/auth/test", authLDAP.HandleTestProtected(app.Log))
 
-	//TODO массив со всеми заказами из дема
+	// массив со всеми заказами из дема
 	router.Get("/api/orders", getorder.GetOrdersFilter(app.Log, app.Storage))
 
 	router.Get("/api/orders/order/{orderNum}", getorder.GetOrderDetails(app.Log, app.Storage))
 
-	//TODO получение шаблонов
+	// получение шаблонов
 	router.Get("/api/template", gettemplate.GetTemplatesByCode(app.Log, app.Storage))
 	router.Get("/api/all_templates", gettemplate.GetAllTemplates(app.Log, app.Storage))
 
-	//TODO сохранение нормированных нарядов
+	// сохранение нормированных нарядов
 	router.Post("/api/orders/order-norm/template", save.SaveNormOrderOperation(app.Log, app.Storage))
 
-	//TODO обновление статуса нормировки(отмена)
+	// обновление статуса нормировки(отмена)
 	router.Post("/api/orders/cancel", update.UpdateCancelStatus(app.Log, app.Storage))
 
-	//TODO get получение нормированного наряда
+	// get получение нормированного наряда
 	router.Get("/api/orders/order/norm/{id}", get.GetNormOrder(app.Log, app.Storage))
-	//TODO получение нескольких заказов нормирования(связанных между собой)
+	// получение нескольких заказов нормирования(связанных между собой)
 	router.Get("/api/orders/order-norm/by-order", get.GetNormOrdersOrderNum(app.Log, app.Storage))
 	router.Get("/api/orders/order-norm/{id}/details", get.DoubleReportOrder(app.Log, app.Storage))
 
-	//TODO get получение всех нормированных нарядов
+	// get получение всех нормированных нарядов
 	router.Get("/api/orders/order/norm/all", get.GetNormOrders(app.Log, app.Storage))
 
-	//TODO update обновление нормированного наряда
+	// update обновление нормированного наряда
 	router.Put("/api/orders/order/norm/update/{id}", update.UpdateNormOrderOperation(app.Log, app.Storage))
 
-	//TODO назначение сотрудников
+	// назначение сотрудников
 	router.Post("/api/workers", saveWorkers.SaveWorkersOperation(app.Log, app.Storage))
-	//TODO получение всех сотрудников
+	// получение всех сотрудников
 	router.Get("/api/workers/all", getWorkers.GetWorkers(app.Log, app.Storage))
 
-	//TODO финальные маршруты для всех готовых заказов и возможность провалиться в них
+	// финальные маршруты для всех готовых заказов и возможность провалиться в них
 	router.Get("/api/allians/{order_num}", get.FinalReportNormOrder(app.Log, app.Storage))
 	router.Get("/api/all_final_order", get.FinalReportNormOrders(app.Log, app.Storage))
 
-	//TODO финальное обновление
+	// финальное обновление
 	router.Put("/api/final/update/{id}", update.UpdateFinalOrder(app.Log, app.Storage))
 
-	//TODO Материалы к заказу
+	// Материалы к заказу
 	router.Get("/api/materials", getmaterials.GetMaterials(app.Log, app.Storage))
 	router.Post("/api/materials/calculation", recalculate_norm.CalculateNormOperations(app.Log, app.Service.RecalculateService))
 
-	// TODO генерация excel
+	// генерация excel
 	router.Get("/api/report/excel", generate_excel.GenerateReportExcel(app.Log, app.Service.GenerateExcelService))
 
-	//TODO вытягивание москиток
-	//router.Post("/api/sync/aa", post.SyncButton(app.Log, app.Service.MosquitoService))
-	//TODO сохранение и расчет водоотливов
+	// вытягивание москиток
+	// сохранение и расчет водоотливов
 	router.Post("/api/orders/nashchelnik/calc", save.SaveNashchelnikCalc(app.Log, app.Storage))
 	router.Get("/api/orders/nashchelnik/raw/{id}", get.GetNashchelnikRawHandler(app.Log, app.Storage))
 
 	router.Get("/api/orders/{id}/vitr-assign", get.GetVitrageAssignments(app.Log, app.Storage))
 
-	//TODO adminPanel
+	// adminPanel
 	adminRouter := chi.NewRouter()
 	adminRouter.Use(auth.JWTAuth(app.JWTService))
 
@@ -129,7 +125,7 @@ func routes(app *App) *chi.Mux {
 	//
 	router.Mount("/api/admin", adminRouter)
 	//
-	// TODO Статика, vue
+	//  Статика, vue
 	frontendDir := "./frontend-dist"
 	if _, err := os.Stat(frontendDir); os.IsNotExist(err) {
 		app.Log.Error("Папка фронтенда не найдена", "path", frontendDir)

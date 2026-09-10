@@ -12,12 +12,11 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type UpdateCoefProvider interface {
+type AdminCoefUpdater interface {
 	UpdateCoefficientPEOAdmin(ctx context.Context, coeffs []storage.CoefficientPEOAdmin) error
-	UpdateAllEmployeesAdmin(ctx context.Context, id int64, input storage.UpdateEmployeeInput) error
 }
 
-func UpdateCoefficientAdmin(log *slog.Logger, update UpdateCoefProvider) http.HandlerFunc {
+func UpdateCoefficientAdmin(log *slog.Logger, update AdminCoefUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.UpdateCoefficientAdmin"
 
@@ -46,7 +45,11 @@ func UpdateCoefficientAdmin(log *slog.Logger, update UpdateCoefProvider) http.Ha
 	}
 }
 
-func UpdateEmployeesAdmin(log *slog.Logger, update UpdateCoefProvider) http.HandlerFunc {
+type AdminEmployeesUpdater interface {
+	UpdateAllEmployeesAdmin(ctx context.Context, id int64, input storage.UpdateEmployeeInput) error
+}
+
+func UpdateEmployeesAdmin(log *slog.Logger, update AdminEmployeesUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.UpdateEmployeesAdmin"
 		if r.Method != http.MethodPut {
@@ -54,7 +57,7 @@ func UpdateEmployeesAdmin(log *slog.Logger, update UpdateCoefProvider) http.Hand
 			return
 		}
 
-		idStr := chi.URLParam(r, "id") // или r.PathValue("id") для Go 1.22+
+		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
 			http.Error(w, "неверный ID", http.StatusBadRequest)

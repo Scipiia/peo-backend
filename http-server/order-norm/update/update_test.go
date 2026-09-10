@@ -24,7 +24,7 @@ type MockNormOrderUpdater struct {
 }
 
 func (m *MockNormOrderUpdater) UpdateNormOrder(ctx context.Context, ID int64, update storage.UpdateOrderDetails) error {
-	return m.Mock.Called(ctx, ID, update).Error(0)
+	return m.Called(ctx, ID, update).Error(0)
 }
 
 func TestUpdateNormOrderOperation(t *testing.T) {
