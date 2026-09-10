@@ -38,9 +38,14 @@
 
 ## Скриншоты
 
+### Список заказов
 ![Список заказов](docs/screenshots/orders.png)
-![Список операции](docs/screenshots/operations.png)
-![Отчеты ПЭО](docs/screenshots/report_peo.png)
+
+### Список операций
+![Список операций](docs/screenshots/operations.png)
+
+### Отчёты ПЭО
+![Отчёты ПЭО](docs/screenshots/report_peo.png)
 
 ## Быстрый старт
 
