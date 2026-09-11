@@ -16,6 +16,30 @@ type TemplateUpdateProvider interface {
 	UpdateTemplateAdmin(ctx context.Context, id int, update storage.TemplateAdmin) error
 }
 
+type TemplateAdminUpdateRequest struct {
+	Code       string              `json:"code"`
+	Category   string              `json:"category"`
+	IsActive   bool                `json:"is_active"`
+	Name       string              `json:"name"`
+	Profile    string              `json:"profile"`
+	Systema    string              `json:"systema"`
+	TypeIzd    string              `json:"type_izd"`
+	Operations []storage.Operation `json:"operations"`
+	Rules      []storage.Rule      `json:"rules"`
+	HeadName   string              `json:"head_name"`
+}
+
+// UpdateTemplateAdmin обновление нового шаблона операции
+// @Summary Обновить новый шаблон
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path string true "id шаблона"
+// @Param request body TemplateAdminUpdateRequest true "Обновленные данные нового шаблона"
+// @Success 200 {object} map[string]string
+// @Failure 400 {string} string "ошибка парсинга JSON"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/admin/template/update/{id} [put]
 func UpdateTemplateAdmin(log *slog.Logger, temp TemplateUpdateProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.UpdateTemplateAdmin"
@@ -27,18 +51,7 @@ func UpdateTemplateAdmin(log *slog.Logger, temp TemplateUpdateProvider) http.Han
 			return
 		}
 
-		var req struct {
-			Code       string              `json:"code"`
-			Category   string              `json:"category"`
-			IsActive   bool                `json:"is_active"`
-			Name       string              `json:"name"`
-			Profile    string              `json:"profile"`
-			Systema    string              `json:"systema"`
-			TypeIzd    string              `json:"type_izd"`
-			Operations []storage.Operation `json:"operations"`
-			Rules      []storage.Rule      `json:"rules"`
-			HeadName   string              `json:"head_name"`
-		}
+		var req TemplateAdminUpdateRequest
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "ошибка парсинга JSON", http.StatusBadRequest)

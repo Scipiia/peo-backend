@@ -15,6 +15,17 @@ type OrdersGetter interface {
 	GetOrdersMonth(ctx context.Context, year int, month int, search string) ([]*storage.Order, error)
 }
 
+// GetOrdersFilter возвращает список заказов с фильтром по году/месяцу или по номеру заказа
+// @Summary Получить заказы
+// @Tags orders
+// @Produce json
+// @Param year query int false "Год (обязателен, если не указан search)"
+// @Param month query int false "Месяц (обязателен, если не указан search)"
+// @Param search query string false "Поиск по номеру заказа (если указан — year/month не нужны)"
+// @Success 200 {array} storage.Order
+// @Failure 400 {string} string "Missing year or month / Invalid year / Invalid month"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/orders [get]
 func GetOrdersFilter(log *slog.Logger, getOrders OrdersGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.orders.orders.GetOrdersFilter"

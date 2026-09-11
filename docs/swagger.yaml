@@ -1,0 +1,395 @@
+basePath: /api
+definitions:
+  save.TemplateAdminSaveRequest:
+    properties:
+      category:
+        type: string
+      code:
+        type: string
+      head_name:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      operations:
+        items:
+          $ref: '#/definitions/storage.Operation'
+        type: array
+      profile:
+        type: string
+      rules:
+        items:
+          $ref: '#/definitions/storage.Rule'
+        type: array
+      systema:
+        type: string
+      type_izd:
+        type: string
+    type: object
+  storage.Operation:
+    properties:
+      count:
+        type: number
+      depends_on:
+        items:
+          type: string
+        type: array
+      formula:
+        type: string
+      group:
+        type: string
+      label:
+        type: string
+      minutes:
+        type: number
+      name:
+        type: string
+      required:
+        type: boolean
+      show_calc:
+        type: boolean
+      type:
+        type: string
+      value:
+        type: number
+    type: object
+  storage.Order:
+    properties:
+      creator:
+        type: integer
+      customer:
+        type: string
+      dop_info:
+        type: string
+      id:
+        type: integer
+      ms_note:
+        type: string
+      order_num:
+        type: string
+    type: object
+  storage.ResultOrderDetails:
+    properties:
+      color:
+        type: string
+      count:
+        type: integer
+      customer:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      name_position:
+        type: string
+      note:
+        type: string
+      order_num:
+        type: string
+      position:
+        type: string
+      sqr:
+        type: number
+    type: object
+  storage.Rule:
+    properties:
+      condition:
+        additionalProperties: true
+        type: object
+      minutes:
+        description: fallback
+        type: number
+      minutes_per_unit:
+        type: number
+      mode:
+        description: '"set", "multiplied", "additive"'
+        type: string
+      operation:
+        type: string
+      unitField:
+        type: string
+      value:
+        description: fallback
+        type: number
+      value_per_unit:
+        type: number
+    type: object
+  storage.Template:
+    properties:
+      ID:
+        type: integer
+      category:
+        type: string
+      code:
+        type: string
+      head_name:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      operations:
+        items:
+          $ref: '#/definitions/storage.Operation'
+        type: array
+      profile:
+        type: string
+      rules:
+        items:
+          $ref: '#/definitions/storage.Rule'
+        type: array
+      systema:
+        type: string
+      type_izd:
+        type: string
+    type: object
+  update.TemplateAdminUpdateRequest:
+    properties:
+      category:
+        type: string
+      code:
+        type: string
+      head_name:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      operations:
+        items:
+          $ref: '#/definitions/storage.Operation'
+        type: array
+      profile:
+        type: string
+      rules:
+        items:
+          $ref: '#/definitions/storage.Rule'
+        type: array
+      systema:
+        type: string
+      type_izd:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для расчёта трудовых норм и учёта производственных заказов
+  title: Сервис нормирования API
+  version: "1.0"
+paths:
+  /api/admin/all_templates:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.Template'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Получить все json шаблоны операции
+      tags:
+      - admin
+  /api/admin/template:
+    get:
+      parameters:
+      - description: ID шаблона
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/storage.Template'
+        "400":
+          description: Missing or invalid query parameter 'id'
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Получить json шаблон операции
+      tags:
+      - admin
+  /api/admin/template/new:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные нового шаблона
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/save.TemplateAdminSaveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: ошибка парсинга JSON
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Сохранить новый шаблон
+      tags:
+      - admin
+  /api/admin/template/update/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: id шаблона
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновленные данные нового шаблона
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/update.TemplateAdminUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: ошибка парсинга JSON
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Обновить новый шаблон
+      tags:
+      - admin
+  /api/all_templates:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.Template'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Получить все json шаблоны операции
+      tags:
+      - template
+  /api/orders:
+    get:
+      parameters:
+      - description: Год (обязателен, если не указан search)
+        in: query
+        name: year
+        type: integer
+      - description: Месяц (обязателен, если не указан search)
+        in: query
+        name: month
+        type: integer
+      - description: Поиск по номеру заказа (если указан — year/month не нужны)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.Order'
+            type: array
+        "400":
+          description: Missing year or month / Invalid year / Invalid month
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Получить заказы
+      tags:
+      - orders
+  /api/orders/{orderNum}:
+    get:
+      parameters:
+      - description: Номер заказа
+        in: path
+        name: orderNum
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.ResultOrderDetails'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Получить детали заказа по номеру
+      tags:
+      - orders
+  /api/template:
+    get:
+      parameters:
+      - description: Код шаблона
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/storage.Template'
+        "400":
+          description: Missing required query parameter 'code'
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Получить json шаблон операции
+      tags:
+      - template
+swagger: "2.0"

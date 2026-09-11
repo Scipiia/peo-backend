@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "vue-golang/docs"
 	auth_ldap "vue-golang/internal/auth-ldap"
 	"vue-golang/internal/config"
 	generate_excel "vue-golang/internal/service/generate-excel"
@@ -36,6 +37,11 @@ type App struct {
 	JWTService   *auth_ldap.JWTService
 }
 
+// @title Сервис нормирования API
+// @version 1.0
+// @description API для расчёта трудовых норм и учёта производственных заказов
+// @host localhost:8080
+// @BasePath /api
 func main() {
 	cfg := config.MustConfig()
 

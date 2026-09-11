@@ -13,22 +13,34 @@ type TemplateCreateProvider interface {
 	CreateTemplateAdmin(ctx context.Context, res storage.TemplateAdmin) error
 }
 
+type TemplateAdminSaveRequest struct {
+	Code       string              `json:"code"`
+	Category   string              `json:"category"`
+	IsActive   bool                `json:"is_active"`
+	Name       string              `json:"name"`
+	Profile    string              `json:"profile"`
+	Systema    string              `json:"systema"`
+	TypeIzd    string              `json:"type_izd"`
+	Operations []storage.Operation `json:"operations"`
+	Rules      []storage.Rule      `json:"rules"`
+	HeadName   string              `json:"head_name"`
+}
+
+// SaveTemplateAdmin создание и сохранение нового шаблона операции
+// @Summary Сохранить новый шаблон
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param request body TemplateAdminSaveRequest true "Данные нового шаблона"
+// @Success 200 {object} map[string]string
+// @Failure 400 {string} string "ошибка парсинга JSON"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/admin/template/new [post]
 func SaveTemplateAdmin(log *slog.Logger, temp TemplateCreateProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.SaveTemplateAdmin"
 
-		var req struct {
-			Code       string              `json:"code"`
-			Category   string              `json:"category"`
-			IsActive   bool                `json:"is_active"`
-			Name       string              `json:"name"`
-			Profile    string              `json:"profile"`
-			Systema    string              `json:"systema"`
-			TypeIzd    string              `json:"type_izd"`
-			Operations []storage.Operation `json:"operations"`
-			Rules      []storage.Rule      `json:"rules"`
-			HeadName   string              `json:"head_name"`
-		}
+		var req TemplateAdminSaveRequest
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "ошибка парсинга JSON", http.StatusBadRequest)
@@ -42,7 +54,6 @@ func SaveTemplateAdmin(log *slog.Logger, temp TemplateCreateProvider) http.Handl
 			return
 		}
 
-		// Если Rules == nil, заменяем на пустой срез
 		if req.Rules == nil {
 			req.Rules = []storage.Rule{}
 		}
@@ -53,8 +64,6 @@ func SaveTemplateAdmin(log *slog.Logger, temp TemplateCreateProvider) http.Handl
 			http.Error(w, "ошибка обработки правил шаблона", http.StatusInternalServerError)
 			return
 		}
-
-		//log.Info("FFFFF", rulesJSON)
 
 		err = temp.CreateTemplateAdmin(r.Context(), storage.TemplateAdmin{
 			Code:      req.Code,

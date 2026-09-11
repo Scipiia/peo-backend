@@ -1,0 +1,603 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API для расчёта трудовых норм и учёта производственных заказов",
+        "title": "Сервис нормирования API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api",
+    "paths": {
+        "/api/admin/all_templates": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Получить все json шаблоны операции",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.Template"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/template": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Получить json шаблон операции",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID шаблона",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/storage.Template"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing or invalid query parameter 'id'",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/template/new": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Сохранить новый шаблон",
+                "parameters": [
+                    {
+                        "description": "Данные нового шаблона",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/save.TemplateAdminSaveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка парсинга JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/template/update/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Обновить новый шаблон",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id шаблона",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Обновленные данные нового шаблона",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/update.TemplateAdminUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка парсинга JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/all_templates": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "template"
+                ],
+                "summary": "Получить все json шаблоны операции",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.Template"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Получить заказы",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Год (обязателен, если не указан search)",
+                        "name": "year",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Месяц (обязателен, если не указан search)",
+                        "name": "month",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по номеру заказа (если указан — year/month не нужны)",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.Order"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing year or month / Invalid year / Invalid month",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/{orderNum}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Получить детали заказа по номеру",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Номер заказа",
+                        "name": "orderNum",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.ResultOrderDetails"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/template": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "template"
+                ],
+                "summary": "Получить json шаблон операции",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Код шаблона",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/storage.Template"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing required query parameter 'code'",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "save.TemplateAdminSaveRequest": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "head_name": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "operations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Operation"
+                    }
+                },
+                "profile": {
+                    "type": "string"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Rule"
+                    }
+                },
+                "systema": {
+                    "type": "string"
+                },
+                "type_izd": {
+                    "type": "string"
+                }
+            }
+        },
+        "storage.Operation": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "number"
+                },
+                "depends_on": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "formula": {
+                    "type": "string"
+                },
+                "group": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "minutes": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "show_calc": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "storage.Order": {
+            "type": "object",
+            "properties": {
+                "creator": {
+                    "type": "integer"
+                },
+                "customer": {
+                    "type": "string"
+                },
+                "dop_info": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "ms_note": {
+                    "type": "string"
+                },
+                "order_num": {
+                    "type": "string"
+                }
+            }
+        },
+        "storage.ResultOrderDetails": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "customer": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name_position": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "order_num": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "string"
+                },
+                "sqr": {
+                    "type": "number"
+                }
+            }
+        },
+        "storage.Rule": {
+            "type": "object",
+            "properties": {
+                "condition": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "minutes": {
+                    "description": "fallback",
+                    "type": "number"
+                },
+                "minutes_per_unit": {
+                    "type": "number"
+                },
+                "mode": {
+                    "description": "\"set\", \"multiplied\", \"additive\"",
+                    "type": "string"
+                },
+                "operation": {
+                    "type": "string"
+                },
+                "unitField": {
+                    "type": "string"
+                },
+                "value": {
+                    "description": "fallback",
+                    "type": "number"
+                },
+                "value_per_unit": {
+                    "type": "number"
+                }
+            }
+        },
+        "storage.Template": {
+            "type": "object",
+            "properties": {
+                "ID": {
+                    "type": "integer"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "head_name": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "operations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Operation"
+                    }
+                },
+                "profile": {
+                    "type": "string"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Rule"
+                    }
+                },
+                "systema": {
+                    "type": "string"
+                },
+                "type_izd": {
+                    "type": "string"
+                }
+            }
+        },
+        "update.TemplateAdminUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "head_name": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "operations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Operation"
+                    }
+                },
+                "profile": {
+                    "type": "string"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Rule"
+                    }
+                },
+                "systema": {
+                    "type": "string"
+                },
+                "type_izd": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

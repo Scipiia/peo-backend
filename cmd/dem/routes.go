@@ -27,6 +27,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/cors"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func routes(app *App) *chi.Mux {
@@ -55,9 +56,10 @@ func routes(app *App) *chi.Mux {
 		auth.RequirePermission("norms:read"),
 	).Get("/api/auth/test", authLDAP.HandleTestProtected(app.Log))
 
-	// массив со всеми заказами из дема
-	router.Get("/api/orders", getorder.GetOrdersFilter(app.Log, app.Storage))
+	router.Get("/swagger/*", httpSwagger.WrapHandler)
 
+	// получение заказов + детали
+	router.Get("/api/orders", getorder.GetOrdersFilter(app.Log, app.Storage))
 	router.Get("/api/orders/order/{orderNum}", getorder.GetOrderDetails(app.Log, app.Storage))
 
 	// получение шаблонов
