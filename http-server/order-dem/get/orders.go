@@ -62,7 +62,6 @@ func GetOrdersFilter(log *slog.Logger, getOrders OrdersGetter) http.HandlerFunc 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		// Передаём в storage
 		orders, err := getOrders.GetOrdersMonth(ctx, year, month, search)
 		if err != nil {
 			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка получения заказов из дем")

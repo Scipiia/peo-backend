@@ -16,6 +16,22 @@ type ResultWorkersGetter interface {
 	SaveOperationWorkers(ctx context.Context, req storage.SaveWorkers) error
 }
 
+type SaveWorkersResponse struct {
+	Status  string                     `json:"status"`
+	Saved   int                        `json:"saved"`
+	Details []storage.OperationWorkers `json:"details"` // подставьте реальный тип элемента req.Assignments
+}
+
+// SaveWorkersOperation назначение и сохранение сотрудников на операции
+// @Summary Сохранить сотрудников
+// @Tags workers
+// @Accept json
+// @Produce json
+// @Param request body storage.SaveWorkers true "Данные об операциях и сотрудниках"
+// @Success 200 {object} SaveWorkersResponse
+// @Failure 400 {string} string "Bad request: invalid JSON / No assignments provided / Assignment N: <field> is required"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/workers [post]
 func SaveWorkersOperation(log *slog.Logger, result ResultWorkersGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.executor.SaveWorkersOperation"
@@ -51,11 +67,6 @@ func SaveWorkersOperation(log *slog.Logger, result ResultWorkersGetter) http.Han
 			}
 		}
 
-		//log.Info("Received assignments",
-		//	slog.Int("total", len(req.Assignments)),
-		//	slog.Any("sample", req.Assignments[0]),
-		//)
-
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 
@@ -66,14 +77,10 @@ func SaveWorkersOperation(log *slog.Logger, result ResultWorkersGetter) http.Han
 			return
 		}
 
-		//log.Info("Assignments saved successfully",
-		//	slog.Int("saved_count", len(req.Assignments)),
-		//)
-
-		render.JSON(w, r, map[string]interface{}{
-			"status":  "success",
-			"saved":   len(req.Assignments),
-			"details": req.Assignments,
+		render.JSON(w, r, SaveWorkersResponse{
+			Status:  "success",
+			Saved:   len(req.Assignments),
+			Details: req.Assignments,
 		})
 	}
 }

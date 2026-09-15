@@ -1,5 +1,161 @@
 basePath: /api
 definitions:
+  get.FinalReportResponse:
+    properties:
+      employees:
+        items:
+          $ref: '#/definitions/storage.GetWorkers'
+        type: array
+      products:
+        items:
+          $ref: '#/definitions/storage.PEOProduct'
+        type: array
+    type: object
+  recalculate.Context:
+    properties:
+      counterCount:
+        format: float64
+        type: number
+      hasImpost:
+        type: boolean
+      hasPetliFural:
+        type: boolean
+      hasPetliRDRH:
+        type: boolean
+      hasPritvorKP40:
+        type: boolean
+      impostCount:
+        format: float64
+        type: number
+      logKomplVst:
+        format: float64
+        type: number
+      logPritvorPrice:
+        format: float64
+        type: number
+      logRamCount:
+        description: Loggia
+        format: float64
+        type: number
+      logSoedPrice:
+        format: float64
+        type: number
+      logStvCount:
+        format: float64
+        type: number
+      mnogozapZamok:
+        format: float64
+        type: number
+      petli3Section:
+        format: float64
+        type: number
+      petliForNaveshCount:
+        format: float64
+        type: number
+      petliFural:
+        format: float64
+        type: number
+      petliRDRH:
+        format: float64
+        type: number
+      petliRolik:
+        format: float64
+        type: number
+      petliStand:
+        format: float64
+        type: number
+      pritvorKP40:
+        format: float64
+        type: number
+      standZamok:
+        format: float64
+        type: number
+      stublinaCount:
+        format: float64
+        type: number
+      stvCountForOpres:
+        format: float64
+        type: number
+      stvTCount400:
+        format: float64
+        type: number
+      stvTCount600:
+        format: float64
+        type: number
+      stvWindowCount:
+        description: HasStvT   bool
+        format: float64
+        type: number
+      tagCountWin:
+        format: float64
+        type: number
+      type:
+        type: string
+    type: object
+  recalculate_norm.RecalculateRequest:
+    properties:
+      count:
+        type: integer
+      order_num:
+        type: string
+      permis_dop_material:
+        type: boolean
+      position:
+        type: integer
+      template:
+        type: string
+      type:
+        type: string
+    type: object
+  recalculate_norm.Resp:
+    properties:
+      context:
+        $ref: '#/definitions/recalculate.Context'
+      operation:
+        items:
+          $ref: '#/definitions/storage.Operation'
+        type: array
+    type: object
+  save.Response:
+    properties:
+      order_id:
+        type: integer
+    type: object
+  save.SaveNashchelnikCalcRequest:
+    properties:
+      a:
+        type: number
+      b:
+        type: number
+      c:
+        type: number
+      count:
+        type: number
+      d:
+        type: number
+      legacy_id:
+        type: integer
+      operations:
+        items:
+          $ref: '#/definitions/storage.NormOperation'
+        type: array
+      order_num:
+        type: string
+      sqr:
+        type: number
+    type: object
+  save.SaveWorkersResponse:
+    properties:
+      details:
+        description: подставьте реальный тип элемента req.Assignments
+        items:
+          $ref: '#/definitions/storage.OperationWorkers'
+        type: array
+      saved:
+        type: integer
+      status:
+        type: string
+    type: object
   save.TemplateAdminSaveRequest:
     properties:
       category:
@@ -26,6 +182,150 @@ definitions:
         type: string
       type_izd:
         type: string
+    type: object
+  storage.AssignedWorker:
+    properties:
+      actual_minutes:
+        type: number
+      actual_value:
+        type: number
+      employee_id:
+        type: integer
+    type: object
+  storage.CoefficientPEOAdmin:
+    properties:
+      coefficient:
+        type: number
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      type:
+        type: string
+    type: object
+  storage.CreateEmployeeInput:
+    properties:
+      is_active:
+        type: boolean
+      name:
+        type: string
+      team_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  storage.EmployeesAdmin:
+    properties:
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      teams:
+        items:
+          $ref: '#/definitions/storage.TeamAdmin'
+        type: array
+    type: object
+  storage.GetOrderDetails:
+    properties:
+      count:
+        type: number
+      created_at:
+        type: string
+      customer:
+        type: string
+      head_name:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      operations:
+        items:
+          $ref: '#/definitions/storage.NormOperation'
+        type: array
+      order_num:
+        type: string
+      parent_assembly:
+        type: string
+      parent_product_id:
+        type: integer
+      part_type:
+        type: string
+      position:
+        type: integer
+      profile:
+        type: string
+      ready_date:
+        type: string
+      sqr:
+        type: number
+      status:
+        type: string
+      systema:
+        type: string
+      template_code:
+        type: string
+      total_time:
+        type: number
+      type:
+        type: string
+      type_izd:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  storage.GetWorkers:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  storage.GetWorkersVitrage:
+    properties:
+      id:
+        type: integer
+      notes:
+        type: string
+    type: object
+  storage.NashchelnikRawData:
+    properties:
+      count:
+        type: number
+      customer:
+        type: string
+      existing_ops:
+        description: Только "Разметка", "Резка" и т.д.
+        items:
+          $ref: '#/definitions/storage.NormOperation'
+        type: array
+      legacy_id:
+        type: integer
+      order_num:
+        type: string
+      pgm:
+        type: number
+      sqr:
+        type: number
+    type: object
+  storage.NormOperation:
+    properties:
+      assign_workers:
+        items:
+          $ref: '#/definitions/storage.AssignedWorker'
+        type: array
+      count:
+        type: number
+      minutes:
+        type: number
+      operation_label:
+        type: string
+      operation_name:
+        type: string
+      value:
+        type: number
     type: object
   storage.Operation:
     properties:
@@ -54,6 +354,21 @@ definitions:
       value:
         type: number
     type: object
+  storage.OperationWorkers:
+    properties:
+      actual_minutes:
+        type: number
+      actual_value:
+        type: number
+      employee_id:
+        type: integer
+      notes:
+        type: string
+      operation_name:
+        type: string
+      product_id:
+        type: integer
+    type: object
   storage.Order:
     properties:
       creator:
@@ -67,6 +382,105 @@ definitions:
       ms_note:
         type: string
       order_num:
+        type: string
+    type: object
+  storage.OrderNormDetails:
+    properties:
+      count:
+        type: number
+      customer:
+        type: string
+      name:
+        type: string
+      operations:
+        items:
+          $ref: '#/definitions/storage.NormOperation'
+        type: array
+      order_num:
+        type: string
+      parent_assembly:
+        type: string
+      parent_product_id:
+        type: integer
+      part_type:
+        type: string
+      position:
+        type: integer
+      profile:
+        type: string
+      sqr:
+        type: number
+      status:
+        type: string
+      systema:
+        type: string
+      template_code:
+        type: string
+      total_time:
+        type: number
+      type:
+        type: string
+      type_izd:
+        type: string
+    type: object
+  storage.PEOProduct:
+    properties:
+      brigade:
+        type: string
+      coefficient:
+        type: number
+      count:
+        type: integer
+      created_at:
+        type: string
+      customer:
+        type: string
+      customer_type:
+        type: string
+      employee_minutes:
+        additionalProperties:
+          format: float64
+          type: number
+        description: 'Мапа: employee_id → суммарные минуты'
+        type: object
+      employee_value:
+        additionalProperties:
+          format: float64
+          type: number
+        type: object
+      id:
+        type: integer
+      name:
+        type: string
+      norm_money:
+        type: number
+      order_num:
+        type: string
+      parent_assembly:
+        type: string
+      parent_product_id:
+        type: integer
+      part_type:
+        type: string
+      position:
+        type: number
+      profile:
+        type: string
+      ready_date:
+        type: string
+      sqr:
+        type: number
+      sqr_stv:
+        type: number
+      status:
+        type: string
+      systema:
+        type: string
+      total_time:
+        type: number
+      type:
+        type: string
+      type_izd:
         type: string
     type: object
   storage.ResultOrderDetails:
@@ -115,6 +529,30 @@ definitions:
       value_per_unit:
         type: number
     type: object
+  storage.SaveWorkers:
+    properties:
+      assignments:
+        items:
+          $ref: '#/definitions/storage.OperationWorkers'
+        type: array
+      ready_date:
+        type: string
+      root_product_id:
+        type: integer
+      update_status:
+        type: string
+    type: object
+  storage.TeamAdmin:
+    properties:
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
   storage.Template:
     properties:
       ID:
@@ -143,6 +581,78 @@ definitions:
         type: string
       type_izd:
         type: string
+    type: object
+  storage.UpdateEmployeeInput:
+    properties:
+      is_active:
+        type: boolean
+      name:
+        type: string
+      team_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  storage.UpdateFinalOrderDetails:
+    properties:
+      brigade:
+        type: string
+      coefficient:
+        type: number
+      customer_type:
+        type: string
+      id:
+        type: integer
+      norm_money:
+        type: number
+      parent_assembly:
+        type: string
+      profile:
+        type: string
+      sqr:
+        type: number
+      sqr_stv:
+        type: number
+      systema:
+        type: string
+      type_izd:
+        type: string
+    type: object
+  storage.UpdateOrderDetails:
+    properties:
+      count:
+        type: number
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      operations:
+        items:
+          $ref: '#/definitions/storage.NormOperation'
+        type: array
+      order_num:
+        type: string
+      parent_assembly:
+        type: string
+      parent_product_id:
+        type: integer
+      part_type:
+        type: string
+      status:
+        type: string
+      total_time:
+        type: number
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  update.CancelStatusRequest:
+    properties:
+      root_product_id:
+        type: integer
     type: object
   update.TemplateAdminUpdateRequest:
     properties:
@@ -178,6 +688,35 @@ info:
   title: Сервис нормирования API
   version: "1.0"
 paths:
+  /api/admin//coefficient/update:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Список коэффициентов
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/storage.CoefficientPEOAdmin'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: ошибка парсинга JSON
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Обновить соэффициент
+      tags:
+      - admin
   /api/admin/all_templates:
     get:
       produces:
@@ -194,6 +733,92 @@ paths:
           schema:
             type: string
       summary: Получить все json шаблоны операции
+      tags:
+      - admin
+  /api/admin/coefficient:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список коэффициентов
+          schema:
+            items:
+              $ref: '#/definitions/storage.CoefficientPEOAdmin'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Получить коэффициенты
+      tags:
+      - admin
+  /api/admin/employees:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.EmployeesAdmin'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Получить сотрудников
+      tags:
+      - admin
+  /api/admin/employees/teams:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.TeamAdmin'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Получить бригады
+      tags:
+      - admin
+  /api/admin/employees/update/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID сотрудника
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные сотрудника
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/storage.UpdateEmployeeInput'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Неверный JSON или ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Обновить сотрудника
       tags:
       - admin
   /api/admin/template:
@@ -289,6 +914,48 @@ paths:
       summary: Обновить новый шаблон
       tags:
       - admin
+  /api/all_final_order:
+    get:
+      parameters:
+      - description: Дата начала периода (YYYY-MM-DD), по умолчанию — начало текущего
+          месяца
+        in: query
+        name: from
+        type: string
+      - description: Дата окончания периода (YYYY-MM-DD), по умолчанию — конец текущего
+          месяца
+        in: query
+        name: to
+        type: string
+      - description: Номер заказа
+        in: query
+        name: order_num
+        type: string
+      - collectionFormat: multi
+        description: Типы изделий (можно указать несколько)
+        in: query
+        items:
+          type: string
+        name: type
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/get.FinalReportResponse'
+        "400":
+          description: Неверный формат даты 'from' или 'to'
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получить данные финального отчёта ПЭО
+      tags:
+      - norm-orders
   /api/all_templates:
     get:
       produces:
@@ -307,6 +974,67 @@ paths:
       summary: Получить все json шаблоны операции
       tags:
       - template
+  /api/final/update/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID заказа для обновления
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновлённые данные по заказу
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/storage.UpdateFinalOrderDetails'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Успешно обновлено
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "500":
+          description: Ошибка обновления
+          schema:
+            type: string
+      summary: Обновить детали заказа
+      tags:
+      - norm-orders
+  /api/materials/calculation:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Параметры для пересчета норм
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/recalculate_norm.RecalculateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/recalculate_norm.Resp'
+        "400":
+          description: Неверные данные
+          schema:
+            type: string
+        "500":
+          description: не удалось пересчитать нормы
+          schema:
+            type: string
+      summary: Сохранить новые операции
+      tags:
+      - recalculate
   /api/orders:
     get:
       parameters:
@@ -342,6 +1070,34 @@ paths:
       summary: Получить заказы
       tags:
       - orders
+  /api/orders/{id}/vitr-assign:
+    get:
+      parameters:
+      - description: ID заказа
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.GetWorkersVitrage'
+            type: array
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получить данные по витражам
+      tags:
+      - norm-orders
   /api/orders/{orderNum}:
     get:
       parameters:
@@ -366,6 +1122,319 @@ paths:
       summary: Получить детали заказа по номеру
       tags:
       - orders
+  /api/orders/cancel:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID корневого изделия
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/update.CancelStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Успешно отменено
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "500":
+          description: Failed to cancel order
+          schema:
+            type: string
+      summary: Отменить статус заказа
+      tags:
+      - norm-orders
+  /api/orders/nashchelnik/calc:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные расчёта нащельника
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/save.SaveNashchelnikCalcRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/storage.GetOrderDetails'
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Сохранить расчёт нащельника
+      tags:
+      - norm-orders
+  /api/orders/nashchelnik/raw/{id}:
+    get:
+      parameters:
+      - description: ID заказа (legacy)
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/storage.NashchelnikRawData'
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получить данные по нащельникам
+      tags:
+      - norm-orders
+  /api/orders/order-norm/{id}/details:
+    get:
+      parameters:
+      - description: ID заказа
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 'Источник данных: mosquito, vodootliv (по умолчанию — обычный
+          заказ)'
+        in: query
+        name: source
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.GetOrderDetails'
+            type: array
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "409":
+          description: REQUIRES_CALCULATOR
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получить детали заказа с учётом источника
+      tags:
+      - norm-orders
+  /api/orders/order-norm/by-order:
+    get:
+      parameters:
+      - description: номер нормированного заказа
+        in: query
+        name: order_num
+        required: true
+        type: string
+      - description: позиция нормированного заказа
+        in: query
+        name: position
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.GetOrderDetails'
+            type: array
+        "400":
+          description: Invalid position
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            type: string
+      summary: Получить нормированные заказы по номеру
+      tags:
+      - norm-orders
+  /api/orders/order-norm/operations:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Нормированные операции к наряду
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/storage.OrderNormDetails'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/save.Response'
+        "400":
+          description: Неверные данные
+          schema:
+            type: string
+        "500":
+          description: не удалось сохранить нормировку / не удалось сохранить операции
+          schema:
+            type: string
+      summary: Сохранить новые операции
+      tags:
+      - norm-orders
+  /api/orders/order/norm/{id}:
+    get:
+      parameters:
+      - description: ID нормированного заказа
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/storage.GetOrderDetails'
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "404":
+          description: Нормировка не найдена
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            type: string
+      summary: Получить нормированный заказ
+      tags:
+      - norm-orders
+  /api/orders/order/norm/all:
+    get:
+      parameters:
+      - description: номер заказа
+        in: query
+        name: order_num
+        type: string
+      - description: тип заказа
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.GetOrderDetails'
+            type: array
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            type: string
+      summary: Получить нормированные заказы
+      tags:
+      - norm-orders
+  /api/orders/order/norm/update/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID заказа для обновления
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновлённые данные по операциям
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/storage.UpdateOrderDetails'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ID обновлённого заказа
+          schema:
+            type: integer
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Обновить нормы по операциям
+      tags:
+      - norm-orders
+  /api/report/excel:
+    get:
+      parameters:
+      - description: Дата начала периода (YYYY-MM-DD), по умолчанию — начало текущего
+          месяца
+        in: query
+        name: from
+        type: string
+      - description: Дата окончания периода (YYYY-MM-DD), по умолчанию — текущая дата
+        in: query
+        name: to
+        type: string
+      - description: Номер заказа
+        in: query
+        name: order_num
+        type: string
+      - collectionFormat: multi
+        description: Типы изделий (можно указать несколько)
+        in: query
+        items:
+          type: string
+        name: type
+        type: array
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Excel-файл с отчётом
+          schema:
+            type: file
+        "400":
+          description: invalid from date / invalid to date
+          schema:
+            type: string
+        "500":
+          description: Internal error
+          schema:
+            type: string
+      summary: Скачать отчёт в формате Excel
+      tags:
+      - report-excel
   /api/template:
     get:
       parameters:
@@ -392,4 +1461,58 @@ paths:
       summary: Получить json шаблон операции
       tags:
       - template
+  /api/workers:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные об операциях и сотрудниках
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/storage.SaveWorkers'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/save.SaveWorkersResponse'
+        "400":
+          description: 'Bad request: invalid JSON / No assignments provided / Assignment
+            N: <field> is required'
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Сохранить сотрудников
+      tags:
+      - workers
+  /api/workers/all:
+    get:
+      parameters:
+      - description: Бригада сотрудников
+        in: query
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.GetWorkers'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Получить всех сотрудников
+      tags:
+      - workers
 swagger: "2.0"

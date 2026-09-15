@@ -9,6 +9,51 @@
     "host": "localhost:8080",
     "basePath": "/api",
     "paths": {
+        "/api/admin//coefficient/update": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Обновить соэффициент",
+                "parameters": [
+                    {
+                        "description": "Список коэффициентов",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.CoefficientPEOAdmin"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "ошибка парсинга JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/admin/all_templates": {
             "get": {
                 "produces": [
@@ -26,6 +71,139 @@
                             "items": {
                                 "$ref": "#/definitions/storage.Template"
                             }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/coefficient": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Получить коэффициенты",
+                "responses": {
+                    "200": {
+                        "description": "Список коэффициентов",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.CoefficientPEOAdmin"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/employees": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Получить сотрудников",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.EmployeesAdmin"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/employees/teams": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Получить бригады",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.TeamAdmin"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/employees/update/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Обновить сотрудника",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID сотрудника",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные сотрудника",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/storage.UpdateEmployeeInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Неверный JSON или ID",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "500": {
@@ -180,6 +358,67 @@
                 }
             }
         },
+        "/api/all_final_order": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Получить данные финального отчёта ПЭО",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Дата начала периода (YYYY-MM-DD), по умолчанию — начало текущего месяца",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата окончания периода (YYYY-MM-DD), по умолчанию — конец текущего месяца",
+                        "name": "to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Номер заказа",
+                        "name": "order_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "Типы изделий (можно указать несколько)",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/get.FinalReportResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат даты 'from' или 'to'",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/all_templates": {
             "get": {
                 "produces": [
@@ -201,6 +440,100 @@
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/final/update/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Обновить детали заказа",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заказа для обновления",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Обновлённые данные по заказу",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/storage.UpdateFinalOrderDetails"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Успешно обновлено"
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка обновления",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/materials/calculation": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recalculate"
+                ],
+                "summary": "Сохранить новые операции",
+                "parameters": [
+                    {
+                        "description": "Параметры для пересчета норм",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/recalculate_norm.RecalculateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/recalculate_norm.Resp"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверные данные",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "не удалось пересчитать нормы",
                         "schema": {
                             "type": "string"
                         }
@@ -262,6 +595,466 @@
                 }
             }
         },
+        "/api/orders/cancel": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Отменить статус заказа",
+                "parameters": [
+                    {
+                        "description": "ID корневого изделия",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/update.CancelStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Успешно отменено"
+                    },
+                    "400": {
+                        "description": "Invalid request payload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to cancel order",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/nashchelnik/calc": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Сохранить расчёт нащельника",
+                "parameters": [
+                    {
+                        "description": "Данные расчёта нащельника",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/save.SaveNashchelnikCalcRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/storage.GetOrderDetails"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/nashchelnik/raw/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Получить данные по нащельникам",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заказа (legacy)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/storage.NashchelnikRawData"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/order-norm/by-order": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Получить нормированные заказы по номеру",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "номер нормированного заказа",
+                        "name": "order_num",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "позиция нормированного заказа",
+                        "name": "position",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.GetOrderDetails"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid position",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/order-norm/operations": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Сохранить новые операции",
+                "parameters": [
+                    {
+                        "description": "Нормированные операции к наряду",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/storage.OrderNormDetails"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/save.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверные данные",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "не удалось сохранить нормировку / не удалось сохранить операции",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/order-norm/{id}/details": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Получить детали заказа с учётом источника",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заказа",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Источник данных: mosquito, vodootliv (по умолчанию — обычный заказ)",
+                        "name": "source",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.GetOrderDetails"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "REQUIRES_CALCULATOR",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/order/norm/all": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Получить нормированные заказы",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "номер заказа",
+                        "name": "order_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "тип заказа",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.GetOrderDetails"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/order/norm/update/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Обновить нормы по операциям",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заказа для обновления",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Обновлённые данные по операциям",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/storage.UpdateOrderDetails"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ID обновлённого заказа",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/order/norm/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Получить нормированный заказ",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID нормированного заказа",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/storage.GetOrderDetails"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Нормировка не найдена",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/orders/{id}/vitr-assign": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "norm-orders"
+                ],
+                "summary": "Получить данные по витражам",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заказа",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.GetWorkersVitrage"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/orders/{orderNum}": {
             "get": {
                 "produces": [
@@ -292,6 +1085,67 @@
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/report/excel": {
+            "get": {
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "report-excel"
+                ],
+                "summary": "Скачать отчёт в формате Excel",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Дата начала периода (YYYY-MM-DD), по умолчанию — начало текущего месяца",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата окончания периода (YYYY-MM-DD), по умолчанию — текущая дата",
+                        "name": "to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Номер заказа",
+                        "name": "order_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "Типы изделий (можно указать несколько)",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Excel-файл с отчётом",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid from date / invalid to date",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
                         "schema": {
                             "type": "string"
                         }
@@ -338,9 +1192,316 @@
                     }
                 }
             }
+        },
+        "/api/workers": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workers"
+                ],
+                "summary": "Сохранить сотрудников",
+                "parameters": [
+                    {
+                        "description": "Данные об операциях и сотрудниках",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/storage.SaveWorkers"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/save.SaveWorkersResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request: invalid JSON / No assignments provided / Assignment N: \u003cfield\u003e is required",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/workers/all": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workers"
+                ],
+                "summary": "Получить всех сотрудников",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Бригада сотрудников",
+                        "name": "type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.GetWorkers"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "get.FinalReportResponse": {
+            "type": "object",
+            "properties": {
+                "employees": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.GetWorkers"
+                    }
+                },
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.PEOProduct"
+                    }
+                }
+            }
+        },
+        "recalculate.Context": {
+            "type": "object",
+            "properties": {
+                "counterCount": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "hasImpost": {
+                    "type": "boolean"
+                },
+                "hasPetliFural": {
+                    "type": "boolean"
+                },
+                "hasPetliRDRH": {
+                    "type": "boolean"
+                },
+                "hasPritvorKP40": {
+                    "type": "boolean"
+                },
+                "impostCount": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "logKomplVst": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "logPritvorPrice": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "logRamCount": {
+                    "description": "Loggia",
+                    "type": "number",
+                    "format": "float64"
+                },
+                "logSoedPrice": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "logStvCount": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "mnogozapZamok": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "petli3Section": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "petliForNaveshCount": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "petliFural": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "petliRDRH": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "petliRolik": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "petliStand": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "pritvorKP40": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "standZamok": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "stublinaCount": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "stvCountForOpres": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "stvTCount400": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "stvTCount600": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "stvWindowCount": {
+                    "description": "HasStvT   bool",
+                    "type": "number",
+                    "format": "float64"
+                },
+                "tagCountWin": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "recalculate_norm.RecalculateRequest": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "order_num": {
+                    "type": "string"
+                },
+                "permis_dop_material": {
+                    "type": "boolean"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "template": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "recalculate_norm.Resp": {
+            "type": "object",
+            "properties": {
+                "context": {
+                    "$ref": "#/definitions/recalculate.Context"
+                },
+                "operation": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Operation"
+                    }
+                }
+            }
+        },
+        "save.Response": {
+            "type": "object",
+            "properties": {
+                "order_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "save.SaveNashchelnikCalcRequest": {
+            "type": "object",
+            "properties": {
+                "a": {
+                    "type": "number"
+                },
+                "b": {
+                    "type": "number"
+                },
+                "c": {
+                    "type": "number"
+                },
+                "count": {
+                    "type": "number"
+                },
+                "d": {
+                    "type": "number"
+                },
+                "legacy_id": {
+                    "type": "integer"
+                },
+                "operations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.NormOperation"
+                    }
+                },
+                "order_num": {
+                    "type": "string"
+                },
+                "sqr": {
+                    "type": "number"
+                }
+            }
+        },
+        "save.SaveWorkersResponse": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "description": "подставьте реальный тип элемента req.Assignments",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.OperationWorkers"
+                    }
+                },
+                "saved": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "save.TemplateAdminSaveRequest": {
             "type": "object",
             "properties": {
@@ -379,6 +1540,226 @@
                 },
                 "type_izd": {
                     "type": "string"
+                }
+            }
+        },
+        "storage.AssignedWorker": {
+            "type": "object",
+            "properties": {
+                "actual_minutes": {
+                    "type": "number"
+                },
+                "actual_value": {
+                    "type": "number"
+                },
+                "employee_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "storage.CoefficientPEOAdmin": {
+            "type": "object",
+            "properties": {
+                "coefficient": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "storage.CreateEmployeeInput": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "team_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "storage.EmployeesAdmin": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "teams": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.TeamAdmin"
+                    }
+                }
+            }
+        },
+        "storage.GetOrderDetails": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "customer": {
+                    "type": "string"
+                },
+                "head_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "operations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.NormOperation"
+                    }
+                },
+                "order_num": {
+                    "type": "string"
+                },
+                "parent_assembly": {
+                    "type": "string"
+                },
+                "parent_product_id": {
+                    "type": "integer"
+                },
+                "part_type": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "profile": {
+                    "type": "string"
+                },
+                "ready_date": {
+                    "type": "string"
+                },
+                "sqr": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systema": {
+                    "type": "string"
+                },
+                "template_code": {
+                    "type": "string"
+                },
+                "total_time": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "type_izd": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "storage.GetWorkers": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "storage.GetWorkersVitrage": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                }
+            }
+        },
+        "storage.NashchelnikRawData": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "number"
+                },
+                "customer": {
+                    "type": "string"
+                },
+                "existing_ops": {
+                    "description": "Только \"Разметка\", \"Резка\" и т.д.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.NormOperation"
+                    }
+                },
+                "legacy_id": {
+                    "type": "integer"
+                },
+                "order_num": {
+                    "type": "string"
+                },
+                "pgm": {
+                    "type": "number"
+                },
+                "sqr": {
+                    "type": "number"
+                }
+            }
+        },
+        "storage.NormOperation": {
+            "type": "object",
+            "properties": {
+                "assign_workers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.AssignedWorker"
+                    }
+                },
+                "count": {
+                    "type": "number"
+                },
+                "minutes": {
+                    "type": "number"
+                },
+                "operation_label": {
+                    "type": "string"
+                },
+                "operation_name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
                 }
             }
         },
@@ -423,6 +1804,29 @@
                 }
             }
         },
+        "storage.OperationWorkers": {
+            "type": "object",
+            "properties": {
+                "actual_minutes": {
+                    "type": "number"
+                },
+                "actual_value": {
+                    "type": "number"
+                },
+                "employee_id": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "operation_name": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "storage.Order": {
             "type": "object",
             "properties": {
@@ -442,6 +1846,154 @@
                     "type": "string"
                 },
                 "order_num": {
+                    "type": "string"
+                }
+            }
+        },
+        "storage.OrderNormDetails": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "number"
+                },
+                "customer": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "operations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.NormOperation"
+                    }
+                },
+                "order_num": {
+                    "type": "string"
+                },
+                "parent_assembly": {
+                    "type": "string"
+                },
+                "parent_product_id": {
+                    "type": "integer"
+                },
+                "part_type": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "profile": {
+                    "type": "string"
+                },
+                "sqr": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systema": {
+                    "type": "string"
+                },
+                "template_code": {
+                    "type": "string"
+                },
+                "total_time": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "type_izd": {
+                    "type": "string"
+                }
+            }
+        },
+        "storage.PEOProduct": {
+            "type": "object",
+            "properties": {
+                "brigade": {
+                    "type": "string"
+                },
+                "coefficient": {
+                    "type": "number"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "customer": {
+                    "type": "string"
+                },
+                "customer_type": {
+                    "type": "string"
+                },
+                "employee_minutes": {
+                    "description": "Мапа: employee_id → суммарные минуты",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number",
+                        "format": "float64"
+                    }
+                },
+                "employee_value": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number",
+                        "format": "float64"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "norm_money": {
+                    "type": "number"
+                },
+                "order_num": {
+                    "type": "string"
+                },
+                "parent_assembly": {
+                    "type": "string"
+                },
+                "parent_product_id": {
+                    "type": "integer"
+                },
+                "part_type": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "number"
+                },
+                "profile": {
+                    "type": "string"
+                },
+                "ready_date": {
+                    "type": "string"
+                },
+                "sqr": {
+                    "type": "number"
+                },
+                "sqr_stv": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systema": {
+                    "type": "string"
+                },
+                "total_time": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "type_izd": {
                     "type": "string"
                 }
             }
@@ -514,6 +2066,43 @@
                 }
             }
         },
+        "storage.SaveWorkers": {
+            "type": "object",
+            "properties": {
+                "assignments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.OperationWorkers"
+                    }
+                },
+                "ready_date": {
+                    "type": "string"
+                },
+                "root_product_id": {
+                    "type": "integer"
+                },
+                "update_status": {
+                    "type": "string"
+                }
+            }
+        },
+        "storage.TeamAdmin": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                }
+            }
+        },
         "storage.Template": {
             "type": "object",
             "properties": {
@@ -555,6 +2144,116 @@
                 },
                 "type_izd": {
                     "type": "string"
+                }
+            }
+        },
+        "storage.UpdateEmployeeInput": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "team_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "storage.UpdateFinalOrderDetails": {
+            "type": "object",
+            "properties": {
+                "brigade": {
+                    "type": "string"
+                },
+                "coefficient": {
+                    "type": "number"
+                },
+                "customer_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "norm_money": {
+                    "type": "number"
+                },
+                "parent_assembly": {
+                    "type": "string"
+                },
+                "profile": {
+                    "type": "string"
+                },
+                "sqr": {
+                    "type": "number"
+                },
+                "sqr_stv": {
+                    "type": "number"
+                },
+                "systema": {
+                    "type": "string"
+                },
+                "type_izd": {
+                    "type": "string"
+                }
+            }
+        },
+        "storage.UpdateOrderDetails": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "operations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.NormOperation"
+                    }
+                },
+                "order_num": {
+                    "type": "string"
+                },
+                "parent_assembly": {
+                    "type": "string"
+                },
+                "parent_product_id": {
+                    "type": "integer"
+                },
+                "part_type": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_time": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "update.CancelStatusRequest": {
+            "type": "object",
+            "properties": {
+                "root_product_id": {
+                    "type": "integer"
                 }
             }
         },

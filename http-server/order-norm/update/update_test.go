@@ -124,13 +124,12 @@ func TestUpdateNormOrderOperation(t *testing.T) {
 			assert.Equal(t, tt.wantStatus, w.Code)
 
 			if tt.checkJSON {
-				var response map[string]interface{}
+				var response int64
 
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				require.NoError(t, err)
 
-				assert.Equal(t, "200", response["status"])
-				assert.Equal(t, float64(tt.orderID), response["norm_id"])
+				assert.Equal(t, tt.orderID, response)
 			}
 
 			if tt.expectedBody == "" {
@@ -142,4 +141,202 @@ func TestUpdateNormOrderOperation(t *testing.T) {
 			}
 		})
 	}
+}
+
+type MockFinalOrderUpdater struct {
+	mock.Mock
+}
+
+func (m *MockFinalOrderUpdater) UpdateFinalOrder(ctx context.Context, ID int64, update storage.UpdateFinalOrderDetails) error {
+	return m.Called(ctx, ID, update).Error(0)
+}
+
+func TestUpdateFinalOrder_OK(t *testing.T) {
+
+	var brigade = "окна и двери"
+
+	updateReq := storage.UpdateFinalOrderDetails{
+		Brigade: &brigade,
+		ID:      1,
+	}
+	idStr := "1"
+
+	mockService := new(MockFinalOrderUpdater)
+	mockService.On("UpdateFinalOrder", mock.Anything, updateReq.ID, updateReq).Return(nil)
+
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	r := chi.NewRouter()
+	r.Put("/api/final/update/{id}", UpdateFinalOrder(log, mockService))
+
+	bodyBytes, err := json.Marshal(updateReq)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPut, "/api/final/update/"+idStr, bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNoContent, w.Code)
+
+	mockService.AssertExpectations(t)
+}
+
+func TestUpdateFinalOrder_InvalidJSON(t *testing.T) {
+
+	idStr := "1"
+
+	mockService := new(MockFinalOrderUpdater)
+
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	r := chi.NewRouter()
+	r.Put("/api/final/update/{id}", UpdateFinalOrder(log, mockService))
+
+	req := httptest.NewRequest(http.MethodPut, "/api/final/update/"+idStr, bytes.NewBufferString(`{`))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid data")
+
+	mockService.AssertNotCalled(t, "UpdateFinalOrder")
+}
+
+func TestUpdateFinalOrder_InvalidID(t *testing.T) {
+
+	mockService := new(MockFinalOrderUpdater)
+
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	r := chi.NewRouter()
+	r.Put("/api/final/update/{id}", UpdateFinalOrder(log, mockService))
+
+	req := httptest.NewRequest(http.MethodPut, "/api/final/update/abc", bytes.NewBufferString(`{"brigade":"окна двери"}`))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid ID")
+
+	mockService.AssertNotCalled(t, "UpdateFinalOrder")
+}
+
+func TestUpdateFinalOrder_InternalError(t *testing.T) {
+
+	var brigade = "окна и двери"
+
+	updateReq := storage.UpdateFinalOrderDetails{
+		Brigade: &brigade,
+		ID:      1,
+	}
+	idStr := "1"
+	resultError := errors.New("database error")
+
+	mockService := new(MockFinalOrderUpdater)
+	mockService.On("UpdateFinalOrder", mock.Anything, updateReq.ID, updateReq).Return(resultError)
+
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	r := chi.NewRouter()
+	r.Put("/api/final/update/{id}", UpdateFinalOrder(log, mockService))
+
+	bodyBytes, err := json.Marshal(updateReq)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPut, "/api/final/update/"+idStr, bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Ошибка обновления")
+
+	mockService.AssertExpectations(t)
+}
+
+type MockCancelStatusUpdater struct {
+	mock.Mock
+}
+
+func (m *MockCancelStatusUpdater) UpdateStatus(ctx context.Context, rootProductID int64, status string) error {
+	return m.Called(ctx, rootProductID, status).Error(0)
+}
+
+func TestUpdateCancelStatus_OK(t *testing.T) {
+	var rootID int64 = 1
+	status := "cancel"
+
+	mockService := new(MockCancelStatusUpdater)
+	mockService.On("UpdateStatus", mock.Anything, rootID, status).Return(nil)
+
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	r := chi.NewRouter()
+	r.Post("/api/orders/cancel", UpdateCancelStatus(log, mockService))
+
+	reqBody := CancelStatusRequest{RootProductID: rootID}
+	bodyBytes, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/orders/cancel", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+
+	mockService.AssertExpectations(t)
+}
+
+func TestUpdateCancelStatus_InvalidJSON(t *testing.T) {
+	mockService := new(MockCancelStatusUpdater)
+
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	r := chi.NewRouter()
+	r.Post("/api/orders/cancel", UpdateCancelStatus(log, mockService))
+
+	req := httptest.NewRequest(http.MethodPost, "/api/orders/cancel", bytes.NewBufferString(`{`))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid request payload")
+
+	mockService.AssertNotCalled(t, "UpdateCancelStatus")
+}
+
+func TestUpdateCancelStatus_InternalError(t *testing.T) {
+	var rootID int64 = 1
+	status := "cancel"
+	resultError := errors.New("database error")
+
+	mockService := new(MockCancelStatusUpdater)
+	mockService.On("UpdateStatus", mock.Anything, rootID, status).Return(resultError)
+
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	r := chi.NewRouter()
+	r.Post("/api/orders/cancel", UpdateCancelStatus(log, mockService))
+
+	reqBody := CancelStatusRequest{RootProductID: rootID}
+	bodyBytes, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/orders/cancel", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Failed to cancel order")
+
+	mockService.AssertExpectations(t)
 }

@@ -13,16 +13,21 @@ import (
 	"github.com/go-chi/render"
 )
 
-type ResultUpdateNorm interface {
-	//UpdateNormOrder(ctx context.Context, ID int64, update storage.UpdateOrderDetails) error
-	UpdateFinalOrder(ctx context.Context, ID int64, update storage.UpdateFinalOrderDetails) error
-	UpdateStatus(ctx context.Context, rootProductID int64, status string) error
-}
-
 type NormOrderUpdater interface {
 	UpdateNormOrder(ctx context.Context, ID int64, update storage.UpdateOrderDetails) error
 }
 
+// UpdateNormOrderOperation обновляет нормы операции
+// @Summary Обновить нормы по операциям
+// @Tags norm-orders
+// @Accept json
+// @Produce json
+// @Param id path int true "ID заказа для обновления"
+// @Param request body storage.UpdateOrderDetails true "Обновлённые данные по операциям"
+// @Success 200 {integer} int64 "ID обновлённого заказа"
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /api/orders/order/norm/update/{id} [put]
 func UpdateNormOrderOperation(log *slog.Logger, update NormOrderUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.norm.UpdateNormHandler"
@@ -41,8 +46,6 @@ func UpdateNormOrderOperation(log *slog.Logger, update NormOrderUpdater) http.Ha
 			return
 		}
 
-		//log.Info("Обновление нормировки", slog.Int64("id", id))
-
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
@@ -53,16 +56,26 @@ func UpdateNormOrderOperation(log *slog.Logger, update NormOrderUpdater) http.Ha
 			return
 		}
 
-		//log.Info("Нормировка обновлена", slog.Int64("id", id))
-
-		render.JSON(w, r, map[string]interface{}{
-			"status":  strconv.Itoa(http.StatusOK),
-			"norm_id": id,
-		})
+		render.JSON(w, r, id)
 	}
 }
 
-func UpdateFinalOrder(log *slog.Logger, update ResultUpdateNorm) http.HandlerFunc {
+type FinalOrderUpdater interface {
+	UpdateFinalOrder(ctx context.Context, ID int64, update storage.UpdateFinalOrderDetails) error
+}
+
+// UpdateFinalOrder обновляет детали по заказу
+// @Summary Обновить детали заказа
+// @Tags norm-orders
+// @Accept json
+// @Produce json
+// @Param id path int true "ID заказа для обновления"
+// @Param request body storage.UpdateFinalOrderDetails true "Обновлённые данные по заказу"
+// @Success 204 "Успешно обновлено"
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 500 {string} string "Ошибка обновления"
+// @Router /api/final/update/{id} [put]
+func UpdateFinalOrder(log *slog.Logger, update FinalOrderUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.norm.UpdateFinalOrder"
 
@@ -80,8 +93,6 @@ func UpdateFinalOrder(log *slog.Logger, update ResultUpdateNorm) http.HandlerFun
 			return
 		}
 
-		//log.Info("Обновление финальной нормировки", slog.Int64("id", id))
-
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
@@ -92,28 +103,36 @@ func UpdateFinalOrder(log *slog.Logger, update ResultUpdateNorm) http.HandlerFun
 			return
 		}
 
-		render.JSON(w, r, map[string]interface{}{
-			"status": "success",
-		})
+		render.NoContent(w, r)
 	}
 }
 
-func UpdateCancelStatus(log *slog.Logger, update ResultUpdateNorm) http.HandlerFunc {
+type CancelStatusUpdater interface {
+	UpdateStatus(ctx context.Context, rootProductID int64, status string) error
+}
+
+type CancelStatusRequest struct {
+	RootProductID int64 `json:"root_product_id"`
+}
+
+// UpdateCancelStatus отменяет статус заказа по корневому изделию
+// @Summary Отменить статус заказа
+// @Tags norm-orders
+// @Accept json
+// @Produce json
+// @Param request body CancelStatusRequest true "ID корневого изделия"
+// @Success 204 "Успешно отменено"
+// @Failure 400 {string} string "Invalid request payload"
+// @Failure 500 {string} string "Failed to cancel order"
+// @Router /api/orders/cancel [post]
+func UpdateCancelStatus(log *slog.Logger, update CancelStatusUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.norm.UpdateCancelStatus"
 
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		if r.Method != http.MethodPost {
-			log.Warn("Invalid method", "method", r.Method)
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		var req struct {
-			RootProductID int64 `json:"root_product_id"`
-		}
+		var req CancelStatusRequest
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("ошибка декодирования JSON")
@@ -128,6 +147,6 @@ func UpdateCancelStatus(log *slog.Logger, update ResultUpdateNorm) http.HandlerF
 			return
 		}
 
-		//log.Info("Order successfully cancelled", "root_product_id", req.RootProductID)
+		render.NoContent(w, r)
 	}
 }

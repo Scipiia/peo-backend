@@ -20,6 +20,16 @@ type Response struct {
 	OrderID int64 `json:"order_id"`
 }
 
+// SaveNormOrderOperation сохранение нормированных операций к заказу
+// @Summary Сохранить новые операции
+// @Tags norm-orders
+// @Accept json
+// @Produce json
+// @Param request body storage.OrderNormDetails true "Нормированные операции к наряду"
+// @Success 200 {object} Response
+// @Failure 400 {string} string "Неверные данные"
+// @Failure 500 {string} string "не удалось сохранить нормировку / не удалось сохранить операции"
+// @Router /api/orders/order-norm/operations [post]
 func SaveNormOrderOperation(log *slog.Logger, res ResultNormSaver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.save.SaveNormOrderOperation"
@@ -49,8 +59,6 @@ func SaveNormOrderOperation(log *slog.Logger, res ResultNormSaver) http.HandlerF
 			return
 		}
 
-		//log.Info("message added", slog.Int64("id", orderID))
-
 		render.JSON(w, r, Response{OrderID: orderID})
 	}
 }
@@ -59,21 +67,33 @@ type SaveNashchelnikSaver interface {
 	SaveNashchelnikNorm(ctx context.Context, legacyID int64, orderNum string, a, b, c, d, sqr, count float64, opsFromFront []storage.NormOperation) (*storage.GetOrderDetails, error)
 }
 
+type SaveNashchelnikCalcRequest struct {
+	LegacyID   int64                   `json:"legacy_id"`
+	OrderNum   string                  `json:"order_num"`
+	A          float64                 `json:"a"`
+	B          float64                 `json:"b"`
+	C          float64                 `json:"c"`
+	D          float64                 `json:"d"`
+	Count      float64                 `json:"count"`
+	Sqr        float64                 `json:"sqr"`
+	Operations []storage.NormOperation `json:"operations"`
+}
+
+// SaveNashchelnikCalc сохраняет расчёт нащельника
+// @Summary Сохранить расчёт нащельника
+// @Tags norm-orders
+// @Accept json
+// @Produce json
+// @Param request body SaveNashchelnikCalcRequest true "Данные расчёта нащельника"
+// @Success 200 {object} storage.GetOrderDetails
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /api/orders/nashchelnik/calc [post]
 func SaveNashchelnikCalc(log *slog.Logger, res SaveNashchelnikSaver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.post.SaveNashchelnikCalc"
 
-		var req struct {
-			LegacyID   int64                   `json:"legacy_id"`
-			OrderNum   string                  `json:"order_num"`
-			A          float64                 `json:"a"`
-			B          float64                 `json:"b"`
-			C          float64                 `json:"c"`
-			D          float64                 `json:"d"`
-			Count      float64                 `json:"count"`
-			Sqr        float64                 `json:"sqr"`
-			Operations []storage.NormOperation `json:"operations"`
-		}
+		var req SaveNashchelnikCalcRequest
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)

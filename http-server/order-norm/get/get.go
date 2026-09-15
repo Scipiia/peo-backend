@@ -18,6 +18,16 @@ type OrderGetter interface {
 	GetNormOrder(ctx context.Context, id int64) (*storage.GetOrderDetails, error)
 }
 
+// GetNormOrder возвращает нормированный заказ по ID
+// @Summary Получить нормированный заказ
+// @Tags norm-orders
+// @Produce json
+// @Param id path int true "ID нормированного заказа"
+// @Success 200 {object} storage.GetOrderDetails
+// @Failure 400 {string} string "Invalid ID"
+// @Failure 404 {string} string "Нормировка не найдена"
+// @Failure 500 {string} string "Внутренняя ошибка"
+// @Router /api/orders/order/norm/{id} [get]
 func GetNormOrder(log *slog.Logger, result OrderGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.GetNormOrder"
@@ -29,7 +39,6 @@ func GetNormOrder(log *slog.Logger, result OrderGetter) http.HandlerFunc {
 			return
 		}
 
-		//log.Info("Получение нормировки", slog.Int64("id", id))
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
@@ -54,13 +63,22 @@ type OrderByOrderNumGetter interface {
 	GetNormOrdersByOrderNum(ctx context.Context, orderNum string, position int) ([]*storage.GetOrderDetails, error)
 }
 
+// GetNormOrdersOrderNum возвращает нормированные заказы по номеру заказа
+// @Summary Получить нормированные заказы по номеру
+// @Tags norm-orders
+// @Produce json
+// @Param order_num query string true "номер нормированного заказа"
+// @Param position query int true "позиция нормированного заказа"
+// @Success 200 {array} storage.GetOrderDetails
+// @Failure 400 {string} string "Invalid position"
+// @Failure 500 {string} string "Внутренняя ошибка"
+// @Router /api/orders/order-norm/by-order [get]
 func GetNormOrdersOrderNum(log *slog.Logger, result OrderByOrderNumGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.order-norm.get.GetNormOrders"
 
 		orderNum := r.URL.Query().Get("order_num")
 		position := r.URL.Query().Get("position")
-		//orderNum := chi.URLParam(r, "order_num")
 
 		positionInt, err := strconv.Atoi(position)
 		if err != nil {
@@ -86,18 +104,25 @@ type OrdersGetter interface {
 	GetNormOrders(ctx context.Context, orderNum, orderType string) ([]storage.GetOrderDetails, error)
 }
 
+// GetNormOrdersOrderNum возвращает все нормированные заказы
+// @Summary Получить нормированные заказы
+// @Tags norm-orders
+// @Produce json
+// @Param order_num query string false "номер заказа"
+// @Param type query string false "тип заказа"
+// @Success 200 {array} storage.GetOrderDetails
+// @Failure 500 {string} string "Внутренняя ошибка"
+// @Router /api/orders/order/norm/all [get]
 func GetNormOrders(log *slog.Logger, result OrdersGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.GetNormOrders"
 
-		// Получаем фильтр
 		orderNum := r.URL.Query().Get("order_num")
 		orderType := r.URL.Query().Get("type")
 
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 
-		// Передаём фильтр (может быть пустым)
 		items, err := result.GetNormOrders(ctx, orderNum, orderType)
 		if err != nil {
 			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("Ошибка при получении заказов")
@@ -105,7 +130,6 @@ func GetNormOrders(log *slog.Logger, result OrdersGetter) http.HandlerFunc {
 			return
 		}
 
-		// Возвращаем JSON
 		render.JSON(w, r, items)
 	}
 }
@@ -116,11 +140,21 @@ type OrderDoubleGetter interface {
 	GetGutterOrderDetails(ctx context.Context, requestedID int64) (*storage.GetOrderDetails, error)
 }
 
+// DoubleReportOrder возвращает детали заказа с учётом источника данных (обычный заказ, москитные сетки, водоотлив)
+// @Summary Получить детали заказа с учётом источника
+// @Tags norm-orders
+// @Produce json
+// @Param id path int true "ID заказа"
+// @Param source query string false "Источник данных: mosquito, vodootliv (по умолчанию — обычный заказ)"
+// @Success 200 {array} storage.GetOrderDetails
+// @Failure 400 {string} string "Invalid ID"
+// @Failure 409 {string} string "REQUIRES_CALCULATOR"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/orders/order-norm/{id}/details [get]
 func DoubleReportOrder(log *slog.Logger, result OrderDoubleGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.DoubleReportOrder"
 
-		// Извлекаем id из URL
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
@@ -133,7 +167,6 @@ func DoubleReportOrder(log *slog.Logger, result OrderDoubleGetter) http.HandlerF
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		//var sub interface{}
 		var sub []*storage.GetOrderDetails
 
 		switch source {
@@ -148,7 +181,7 @@ func DoubleReportOrder(log *slog.Logger, result OrderDoubleGetter) http.HandlerF
 			render.JSON(w, r, []*storage.GetOrderDetails{item})
 			return
 		case "vodootliv":
-			log.Debug("loading mosquito order details", "id", id)
+			log.Debug("loading vodootliv order details", "id", id)
 			item, err := result.GetGutterOrderDetails(ctx, id)
 			if err != nil {
 				if strings.Contains(err.Error(), "REQUIRES_CALCULATOR") {
@@ -157,7 +190,7 @@ func DoubleReportOrder(log *slog.Logger, result OrderDoubleGetter) http.HandlerF
 					return
 				}
 				log.Error("daychlen", slog.String("op", op), slog.String("error", err.Error()))
-				http.Error(w, "Internal Error", http.StatusInternalServerError)
+				http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 				return
 			}
 			render.JSON(w, r, []*storage.GetOrderDetails{item})
@@ -186,8 +219,6 @@ func FinalReportNormOrder(log *slog.Logger, result OrderFinalGetter) http.Handle
 
 		orderNum := chi.URLParam(r, "order_num")
 
-		//log.Info("Получение нормировки", slog.String("orderNum", orderNum))
-
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
@@ -206,18 +237,33 @@ type OrdersPEOGetter interface {
 	GetPEOProductsByCategory(ctx context.Context, filter mysql.ProductFilter) ([]storage.PEOProduct, []storage.GetWorkers, error)
 }
 
+type FinalReportResponse struct {
+	Employees []storage.GetWorkers `json:"employees"`
+	Products  []storage.PEOProduct `json:"products"`
+}
+
+// FinalReportNormOrders возвращает изделия и сотрудников для финального отчёта ПЭО за период
+// @Summary Получить данные финального отчёта ПЭО
+// @Tags norm-orders
+// @Produce json
+// @Param from query string false "Дата начала периода (YYYY-MM-DD), по умолчанию — начало текущего месяца"
+// @Param to query string false "Дата окончания периода (YYYY-MM-DD), по умолчанию — конец текущего месяца"
+// @Param order_num query string false "Номер заказа"
+// @Param type query []string false "Типы изделий (можно указать несколько)" collectionFormat(multi)
+// @Success 200 {object} FinalReportResponse
+// @Failure 400 {string} string "Неверный формат даты 'from' или 'to'"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/all_final_order [get]
 func FinalReportNormOrders(log *slog.Logger, result OrdersPEOGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.order-norm.get.FinalReportNormOrders"
 
-		// Парсим query-параметры
 		fromStr := r.URL.Query().Get("from")
 		toStr := r.URL.Query().Get("to")
 		orderNum := r.URL.Query().Get("order_num")
 		typeIzd := r.URL.Query()["type"]
 
 		var from, to time.Time
-		//var err error
 
 		parseDate := func(dateStr string, defaultTime time.Time) (time.Time, error) {
 			if dateStr == "" {
@@ -226,7 +272,6 @@ func FinalReportNormOrders(log *slog.Logger, result OrdersPEOGetter) http.Handle
 			return time.Parse("2006-01-02", dateStr)
 		}
 
-		// По умолчанию: начало и конец текущего месяца
 		now := time.Now()
 		startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 		endOfMonth := startOfMonth.AddDate(0, 1, 0).Add(-time.Second)
@@ -245,7 +290,6 @@ func FinalReportNormOrders(log *slog.Logger, result OrdersPEOGetter) http.Handle
 			return
 		}
 
-		// Формируем фильтр
 		filter := mysql.ProductFilter{
 			From:     from,
 			To:       to,
@@ -256,7 +300,6 @@ func FinalReportNormOrders(log *slog.Logger, result OrdersPEOGetter) http.Handle
 		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 		defer cancel()
 
-		// Запрашиваем данные
 		products, employees, err := result.GetPEOProductsByCategory(ctx, filter)
 		if err != nil {
 			log.With(slog.String("op", op), slog.Any("error", err)).Error("Ошибка при получении изделий")
@@ -264,10 +307,9 @@ func FinalReportNormOrders(log *slog.Logger, result OrdersPEOGetter) http.Handle
 			return
 		}
 
-		// Отправить как JSON:
-		response := map[string]interface{}{
-			"employees": employees,
-			"products":  products,
+		response := FinalReportResponse{
+			Employees: employees,
+			Products:  products,
 		}
 
 		render.JSON(w, r, response)
@@ -278,11 +320,19 @@ type OrderNashelGetter interface {
 	GetNashchelnikRawData(ctx context.Context, legacyID int64) (*storage.NashchelnikRawData, error)
 }
 
+// GetNashchelnikRawHandler возвращает данные по нащельникам для калькулятора
+// @Summary Получить данные по нащельникам
+// @Tags norm-orders
+// @Produce json
+// @Param id path int true "ID заказа (legacy)"
+// @Success 200 {object} storage.NashchelnikRawData
+// @Failure 400 {string} string "Invalid ID"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/orders/nashchelnik/raw/{id} [get]
 func GetNashchelnikRawHandler(log *slog.Logger, storage OrderNashelGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.GetNashchelnikRawHandler"
 
-		// Парсим ID из URL
 		idStr := chi.URLParam(r, "id")
 		legacyID, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
@@ -293,11 +343,10 @@ func GetNashchelnikRawHandler(log *slog.Logger, storage OrderNashelGetter) http.
 		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 		defer cancel()
 
-		// Вызываем метод хранилища
 		data, err := storage.GetNashchelnikRawData(ctx, legacyID)
 		if err != nil {
 			log.With(slog.String("op", op), slog.String("error", err.Error())).Error("Failed to get raw nashchelnik data")
-			http.Error(w, "Not found", http.StatusNotFound)
+			http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 			return
 		}
 
@@ -309,6 +358,15 @@ type OrderVitrageGetter interface {
 	GetNormOrderVitrage(ctx context.Context, id int64) ([]storage.GetWorkersVitrage, error)
 }
 
+// GetVitrageAssignments возвращает данные по витражам
+// @Summary Получить данные по витражам
+// @Tags norm-orders
+// @Produce json
+// @Param id path int true "ID заказа"
+// @Success 200 {array} storage.GetWorkersVitrage
+// @Failure 400 {string} string "Invalid ID"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/orders/{id}/vitr-assign [get]
 func GetVitrageAssignments(log *slog.Logger, storage OrderVitrageGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.get.GetVitrageAssignments"

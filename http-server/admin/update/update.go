@@ -10,20 +10,26 @@ import (
 	"vue-golang/internal/storage"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
 type AdminCoefUpdater interface {
 	UpdateCoefficientPEOAdmin(ctx context.Context, coeffs []storage.CoefficientPEOAdmin) error
 }
 
+// UpdateCoefficientAdmin обновление соэффициентов
+// @Summary Обновить соэффициент
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param request body []storage.CoefficientPEOAdmin true "Список коэффициентов"
+// @Success 204
+// @Failure 400 {string} string "ошибка парсинга JSON"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/admin//coefficient/update [put]
 func UpdateCoefficientAdmin(log *slog.Logger, update AdminCoefUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.UpdateCoefficientAdmin"
-
-		if r.Method != http.MethodPut {
-			http.Error(w, "Метод не разрешён", http.StatusMethodNotAllowed)
-			return
-		}
 
 		var coeffs []storage.CoefficientPEOAdmin
 		if err := json.NewDecoder(r.Body).Decode(&coeffs); err != nil {
@@ -41,7 +47,7 @@ func UpdateCoefficientAdmin(log *slog.Logger, update AdminCoefUpdater) http.Hand
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		render.NoContent(w, r)
 	}
 }
 
@@ -49,13 +55,19 @@ type AdminEmployeesUpdater interface {
 	UpdateAllEmployeesAdmin(ctx context.Context, id int64, input storage.UpdateEmployeeInput) error
 }
 
+// @Summary Обновить сотрудника
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path int true "ID сотрудника"
+// @Param request body storage.UpdateEmployeeInput true "Данные сотрудника"
+// @Success 204 "No Content"
+// @Failure 400 {string} string "Неверный JSON или ID"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/admin/employees/update/{id} [put]
 func UpdateEmployeesAdmin(log *slog.Logger, update AdminEmployeesUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.UpdateEmployeesAdmin"
-		if r.Method != http.MethodPut {
-			http.Error(w, "Метод не разрешён", http.StatusMethodNotAllowed)
-			return
-		}
 
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
@@ -81,6 +93,6 @@ func UpdateEmployeesAdmin(log *slog.Logger, update AdminEmployeesUpdater) http.H
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		render.NoContent(w, r)
 	}
 }

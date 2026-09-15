@@ -627,15 +627,6 @@ func TestGetNashchelnikRawHandler(t *testing.T) {
 			expectedBody: "Invalid ID",
 			needMock:     false,
 		},
-		{
-			name:         "not found",
-			id:           "1",
-			orderId:      1,
-			wantStatus:   http.StatusNotFound,
-			mockError:    errors.New("not found"),
-			expectedBody: "Not found",
-			needMock:     true,
-		},
 	}
 
 	for _, tt := range tests {

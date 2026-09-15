@@ -14,6 +14,14 @@ type WorkersGetter interface {
 	GetAllWorkers(ctx context.Context, typeIzd string) ([]storage.GetWorkers, error)
 }
 
+// GetWorkers возвращает всех сотрудников цеха
+// @Summary Получить всех сотрудников
+// @Tags workers
+// @Produce json
+// @Param type query string true "Бригада сотрудников"
+// @Success 200 {array} storage.GetWorkers
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/workers/all [get]
 func GetWorkers(log *slog.Logger, worker WorkersGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.order-dem-norm.get.GetWorkers"
@@ -29,8 +37,6 @@ func GetWorkers(log *slog.Logger, worker WorkersGetter) http.HandlerFunc {
 			http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 			return
 		}
-
-		//log.With(slog.Int("найдено работников", len(workers))).Info("работники найдены")
 
 		render.JSON(w, r, workers)
 	}

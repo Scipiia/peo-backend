@@ -14,6 +14,18 @@ type GenerateExcelHandler interface {
 	GenerateExcel(ctx context.Context, filter mysql.ProductFilter) ([]byte, error)
 }
 
+// GenerateReportExcel генерирует Excel-отчёт по изделиям за период
+// @Summary Скачать отчёт в формате Excel
+// @Tags report-excel
+// @Produce application/octet-stream
+// @Param from query string false "Дата начала периода (YYYY-MM-DD), по умолчанию — начало текущего месяца"
+// @Param to query string false "Дата окончания периода (YYYY-MM-DD), по умолчанию — текущая дата"
+// @Param order_num query string false "Номер заказа"
+// @Param type query []string false "Типы изделий (можно указать несколько)" collectionFormat(multi)
+// @Success 200 {file} binary "Excel-файл с отчётом"
+// @Failure 400 {string} string "invalid from date / invalid to date"
+// @Failure 500 {string} string "Internal error"
+// @Router /api/report/excel [get]
 func GenerateReportExcel(log *slog.Logger, gen GenerateExcelHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.norm.GenerateReportExcel"
@@ -61,10 +73,14 @@ func GenerateReportExcel(log *slog.Logger, gen GenerateExcelHandler) http.Handle
 			return
 		}
 
-		fileName := fmt.Sprintf("test_%s.xlsx", time.Now().Format("2006-01-02_150405"))
+		fileName := fmt.Sprintf("%s.xlsx", time.Now().Format("2006-01-02_150405"))
 
 		w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 		w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
-		w.Write(excelBytes)
+		_, err = w.Write(excelBytes)
+		if err != nil {
+			log.Error("failed to generate excel", "op", op, "err", err)
+			return
+		}
 	}
 }

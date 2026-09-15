@@ -13,7 +13,6 @@ import (
 )
 
 type NormCalculator interface {
-	//CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int) ([]storage.Operation, recalculate.Context, error)
 	CalculateNorm(ctx context.Context, orderNum string, pos int, typeIzd string, templateCode string, itemCount int, permisDopMaterial bool) ([]storage.Operation, recalculate.Context, error)
 }
 
@@ -22,18 +21,30 @@ type Resp struct {
 	Context   recalculate.Context `json:"context"`
 }
 
+type RecalculateRequest struct {
+	OrderNum          string `json:"order_num"`
+	Position          int    `json:"position"`
+	TypeIzd           string `json:"type"`
+	TemplateCode      string `json:"template"`
+	ItemCount         int    `json:"count"`
+	PermisDopMaterial bool   `json:"permis_dop_material"`
+}
+
+// CalculateNormOperations пересчет и сохранение новых норм
+// @Summary Сохранить новые операции
+// @Tags recalculate
+// @Accept json
+// @Produce json
+// @Param request body RecalculateRequest true "Параметры для пересчета норм"
+// @Success 200 {object} Resp
+// @Failure 400 {string} string "Неверные данные"
+// @Failure 500 {string} string "не удалось пересчитать нормы"
+// @Router /api/materials/calculation [post]
 func CalculateNormOperations(log *slog.Logger, calc NormCalculator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.norm.CalculateNormOperations"
 
-		var req struct {
-			OrderNum          string `json:"order_num"`
-			Position          int    `json:"position"`
-			TypeIzd           string `json:"type"`
-			TemplateCode      string `json:"template"`
-			ItemCount         int    `json:"count"`
-			PermisDopMaterial bool   `json:"permis_dop_material"`
-		}
+		var req RecalculateRequest
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Некорректный JSON", http.StatusBadRequest)

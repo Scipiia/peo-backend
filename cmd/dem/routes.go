@@ -67,7 +67,7 @@ func routes(app *App) *chi.Mux {
 	router.Get("/api/all_templates", gettemplate.GetAllTemplates(app.Log, app.Storage))
 
 	// сохранение нормированных нарядов
-	router.Post("/api/orders/order-norm/template", save.SaveNormOrderOperation(app.Log, app.Storage))
+	router.Post("/api/orders/order-norm/operations", save.SaveNormOrderOperation(app.Log, app.Storage))
 
 	// обновление статуса нормировки(отмена)
 	router.Post("/api/orders/cancel", update.UpdateCancelStatus(app.Log, app.Storage))
@@ -90,8 +90,10 @@ func routes(app *App) *chi.Mux {
 	router.Get("/api/workers/all", getWorkers.GetWorkers(app.Log, app.Storage))
 
 	// финальные маршруты для всех готовых заказов и возможность провалиться в них
-	router.Get("/api/allians/{order_num}", get.FinalReportNormOrder(app.Log, app.Storage))
 	router.Get("/api/all_final_order", get.FinalReportNormOrders(app.Log, app.Storage))
+
+	//на будущее, маршрут для правки заказов через админку
+	//router.Get("/api/allians/{order_num}", get.FinalReportNormOrder(app.Log, app.Storage))
 
 	// финальное обновление
 	router.Put("/api/final/update/{id}", update.UpdateFinalOrder(app.Log, app.Storage))
