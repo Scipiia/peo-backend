@@ -1,5 +1,5 @@
 .env
-config/*.yaml
+config/local.yaml
 !config/example.yaml
 !.env.example
 errors.log
