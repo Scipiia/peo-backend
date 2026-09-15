@@ -688,35 +688,6 @@ info:
   title: Сервис нормирования API
   version: "1.0"
 paths:
-  /api/admin//coefficient/update:
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: Список коэффициентов
-        in: body
-        name: request
-        required: true
-        schema:
-          items:
-            $ref: '#/definitions/storage.CoefficientPEOAdmin'
-          type: array
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: ошибка парсинга JSON
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Обновить соэффициент
-      tags:
-      - admin
   /api/admin/all_templates:
     get:
       produces:
@@ -751,6 +722,35 @@ paths:
           schema:
             type: string
       summary: Получить коэффициенты
+      tags:
+      - admin
+  /api/admin/coefficient/update:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Список коэффициентов
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/storage.CoefficientPEOAdmin'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: ошибка парсинга JSON
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Обновить соэффициент
       tags:
       - admin
   /api/admin/employees:

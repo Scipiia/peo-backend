@@ -26,7 +26,7 @@ type AdminCoefUpdater interface {
 // @Success 204
 // @Failure 400 {string} string "ошибка парсинга JSON"
 // @Failure 500 {string} string "Internal server error"
-// @Router /api/admin//coefficient/update [put]
+// @Router /api/admin/coefficient/update [put]
 func UpdateCoefficientAdmin(log *slog.Logger, update AdminCoefUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.template.UpdateCoefficientAdmin"
