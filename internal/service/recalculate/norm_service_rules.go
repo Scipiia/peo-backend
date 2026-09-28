@@ -319,25 +319,44 @@ func BuildContextLoggia(materials []*storage.KlaesMaterials, dopInfo []*storage.
 	for _, m := range materials {
 		name := strings.TrimSpace(m.NameMat)
 
-		if name == "Рама нижняя" || name == "Рама нижняя Сл.90" {
+		// if name == "Рама нижняя" || name == "Рама нижняя Сл.90" {
+		// 	ctx.LogRamCount += m.Count
+		// }
+
+		if constants.RamLog[name] {
 			ctx.LogRamCount += m.Count
 		}
 
-		if name == "Створка верх/низ" {
+		// if name == "Створка верх/низ" {
+		// 	ctx.LogStvCount += m.Count
+		// }
+
+		if constants.StvLog[name] {
 			ctx.LogStvCount += m.Count
-			//fmt.Println(ctx.logStvCount)
 		}
 
-		if name == "Соединитель /сл.60-сл.60/" {
+		// if name == "Соединитель /сл.60-сл.60/" {
+		// 	ctx.LogSoedPrice += m.Count
+		// 	//log.Printf("logSOED=%f", ctx.LogSoedPrice)
+		// }
+
+		if constants.SoedLog[name] {
 			ctx.LogSoedPrice += m.Count
-			//log.Printf("logSOED=%f", ctx.LogSoedPrice)
 		}
 
-		if name == "Притвор для ручки с защёлкой" {
+		// if name == "Притвор для ручки с защёлкой" {
+		// 	ctx.LogPritvorPrice += m.Count
+		// }
+
+		if constants.PritvorLog[name] {
 			ctx.LogPritvorPrice += m.Count
 		}
 
-		if name == "Набор вставок" {
+		// if name == "Набор вставок" {
+		// 	ctx.LogKomplVst += m.Count
+		// }
+
+		if constants.NaborVstavLog[name] {
 			ctx.LogKomplVst += m.Count
 		}
 	}
@@ -345,7 +364,6 @@ func BuildContextLoggia(materials []*storage.KlaesMaterials, dopInfo []*storage.
 	for _, d := range dopInfo {
 		name := strings.TrimSpace(d.NamePosition)
 
-		// Тут подставь точные названия из твоей базы
 		if strings.Contains(name, "Соединитель") ||
 			strings.Contains(name, "Труба") ||
 			strings.Contains(name, "Поворот 90гр") {

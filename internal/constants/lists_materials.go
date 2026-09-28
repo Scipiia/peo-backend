@@ -111,4 +111,26 @@ var (
 		"Стойка ригель. глухарей": true,
 		"Рама": true,
 	}
+
+	// TODO подсчет материалов для лоджии
+	RamLog = map[string]bool{
+		"Рама нижняя":       true,
+		"Рама нижняя Сл.90": true,
+	}
+
+	StvLog = map[string]bool{
+		"Створка верх/низ": true,
+	}
+
+	SoedLog = map[string]bool{
+		"Соединитель /сл.60-сл.60/": true,
+	}
+
+	PritvorLog = map[string]bool{
+		"Притвор для ручки с защёлкой": true,
+	}
+
+	NaborVstavLog = map[string]bool{
+		"Набор вставок": true,
+	}
 )
